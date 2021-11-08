@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+        "basic2DGridBed.H": "cpp",
+        "basic2DGridBed.C": "cpp",
+        "BioBed.C": "cpp",
+        "basicBio2DBed.C": "cpp",
+        "defineBasicBio2DBed.C": "cpp",
+        "makebasicBio2DBedSubmodels.C": "cpp",
+        "ParticleForce.H": "cpp",
+        "ParticleForce.C": "cpp",
+        "ParticleForceNew.C": "cpp"
+    }
+}

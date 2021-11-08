@@ -1,0 +1,5 @@
+ 
+
+useful information for parallel computing
+
+ https://www.cfd-online.com/Forums/openfoam-programming-development/76664-looping-over-volscalarfield-parallel-run.html

@@ -1,0 +1,73 @@
+void Foam::basic2DGridBed::setModels()
+{
+    IOdictionary forcesModel_ = subModelProperties_.subOrEmptyDict("particleForces")
+    
+    forAllConstIter(IDLList<entry>, forcesModel_, iter)
+    {
+        const word& model = iter().keyword();
+        if (iter().isDict())
+        {
+            forces_.reset
+            (
+                ParticleForce<basic2DGridBed>::New
+                (
+                    *this,
+                    mesh_,
+                    iter().dict(),
+                    model
+                ).ptr()
+            );
+        }
+        else
+        {
+            forces_.reset
+            (
+                ParticleForce<basic2DGridBed>::New
+                (
+                    *this,
+                    mesh_,
+                    dictionary::null,
+                    model
+                ).ptr()
+            );
+        }
+    }                        
+}
+
+
+
+
+
+// #include "ParticleForceList.H"
+
+typedef Foam::BedType::basic2DGridBed basic2DGridBed;            \
+        
+//     //- Force models type
+//         typedef ParticleForceList<basic2DGridBed> forceType;
+
+
+//     forces_
+//     (
+//         *this,
+//         mesh_,
+//         subModelProperties_.subOrEmptyDict
+//         (
+//             "particleForces",
+//             true//hard coded
+//         ),
+//         true//hard coded
+//     ),
+
+
+
+//     forces_
+//     (
+//         *this,
+//         mesh_,
+//         subModelProperties_.subOrEmptyDict
+//         (
+//             "particleForces",
+//             true//hard coded
+//         ),
+//         true//hard coded
+//     ),

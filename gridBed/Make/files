@@ -1,0 +1,26 @@
+
+/* integration schemes */
+subModels/integrationScheme/integrationScheme/integrationScheme.C
+subModels/integrationScheme/integrationScheme/integrationSchemeNew.C
+subModels/integrationScheme/Euler/Euler.C
+subModels/integrationScheme/analytical/analytical.C
+
+
+BASICBED=basicGridBed
+BEDS=GridBed
+
+DERIVEDBEDS=$(BEDS)/derived
+
+/* basic bed models */
+$(BASICBED)/basic2DGridBed/basic2DGridBed.C
+$(BASICBED)/makeBasic2DGridBedSubmodels.C
+
+/* derived gravity bed models and submodels*/
+$(DERIVEDBEDS)/basicGravity2DBed/defineBasicGravity2DBed.C
+
+/* derived thermo bed models and submodels*/
+$(DERIVEDBEDS)/basicThermo2DBed/defineBasicThermo2DBed.C
+$(DERIVEDBEDS)/basicThermo2DBed/makeBasicThermo2DBedSubmodels.C
+
+
+LIB = $(FOAM_USER_LIBBIN)/libgridBed
