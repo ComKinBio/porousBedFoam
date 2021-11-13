@@ -22,5 +22,7 @@ $(DERIVEDBEDS)/basicGravity2DBed/defineBasicGravity2DBed.C
 $(DERIVEDBEDS)/basicThermo2DBed/defineBasicThermo2DBed.C
 $(DERIVEDBEDS)/basicThermo2DBed/makeBasicThermo2DBedSubmodels.C
 
+/* derived bio bed models, bioBedFields class and submodels*/
+$(BEDS)/Templates/BioBed/bioBedFields/bioBedFields.C
 
 LIB = $(FOAM_USER_LIBBIN)/libgridBed

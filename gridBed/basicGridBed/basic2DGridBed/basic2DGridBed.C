@@ -95,7 +95,7 @@ Foam::basic2DGridBed::basic2DGridBed
             IOobject::AUTO_WRITE
         ),
         mesh_,
-        dimensionedScalar("alphac",dimless, 0)
+        dimensionedScalar(dimless, 0)
     ),
     dp_
     (

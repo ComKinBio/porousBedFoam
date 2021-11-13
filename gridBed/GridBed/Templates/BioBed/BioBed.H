@@ -26,10 +26,10 @@ Class
 
 Description
     BioBed class with multi-components: wet wood, dry wood, char, and ash
-    with thermol properties and conversion
+    with thermol properties and conversion should be inherited from 
+    thermoBed template
 
     Sub-models include:
-    - particle surface heat transfer
     - Drying, Devo, and char reactions
 
 SourceFiles
@@ -45,6 +45,7 @@ SourceFiles
 #include "autoPtr.H"
 #include "demandDrivenEntry.H"
 #include "SLGThermo.H"
+#include "bioBedFields.H"
 
 // #include "ParticleForceList.H" // TODO
 
@@ -63,7 +64,8 @@ class BioBed;
 template<class BedType>
 class BioBed
 :
-    public BedType
+    public BedType,
+    public bioBedFields
 {
 
 public:
@@ -76,124 +78,59 @@ public:
         //- Convenience typedef for this bed type
         typedef BioBed<BedType> BioBedType;
         
-    // Static enum declear
+        using BedType::mesh_;
         
-        enum particlePhase 
-        {
-            wet_, 
-            dry_, 
-            char_, 
-            ash_
-        };
-         
-        static const particlePhase bedComponents[] = {wet_, dry_, char_, ash_};
     
-    
-    
-    
-
-    //- Class to hold BioBed constant properties
-    class constantProperties
-    {
-        protected:
-
-            // Protected data
-
-                //- Constant properties dictionary
-                const dictionary dict_;
-
-
-        private:
-
-            // Private Data
-
-                //- Parcel type id - used for post-processing to flag the type
-                //  of parcels issued by this cloud
-                demandDrivenEntry<label> parcelTypeId_;
-
-                //- Minimum density [kg/m^3]
-                demandDrivenEntry<scalar> rhoMin_;
-
-                //- Particle density [kg/m^3] (constant)
-                demandDrivenEntry<scalar> rho0_;
-
-                //- Minimum parcel mass [kg]
-                demandDrivenEntry<scalar> minParcelMass_;
-
-
-        public:
-
-            // Constructors
-
-                //- Null constructor
-                constantProperties();
-
-                //- Copy constructor
-                constantProperties(const constantProperties& cp);
-
-                //- Construct from dictionary
-                constantProperties(const dictionary& parentDict);
-
-
-            // Member Functions
-
-                //- Return const access to the constant properties dictionary
-                inline const dictionary& dict() const;
-
-                //- Return const access to the parcel type id
-                inline label parcelTypeId() const;
-
-                //- Return const access to the minimum density
-                inline scalar rhoMin() const;
-
-                //- Return const access to the particle density
-                inline scalar rho0() const;
-
-                //- Return const access to the minimum parcel mass
-                inline scalar minParcelMass() const;
-    };
-
-
 protected:
 
     // Protected data
 
-        // Parcel properties
+        // References to the cloud sub-models
 
-            //- Active flag - tracking inactive when active = false
-            bool active_;
-
-            //- Parcel type id
-            label typeId_;
-
-            //- Number of particles in Parcel
-            scalar nParticle_;
-
-            //- Diameter [m]
-            scalar d_;
-
-            //- Target diameter [m]
-            scalar dTarget_;
-
-            //- Velocity of Parcel [m/s]
-            vector U_;
-
-            //- Density [kg/m^3]
-            scalar rho_;
-
-            //- Age [s]
-            scalar age_;
-
-            //- Time spent in turbulent eddy [s]
-            scalar tTurb_;
-
-            //- Turbulent velocity fluctuation [m/s]
-            vector UTurb_;
+            // //- Mass transfer sub-model
+            // autoPtr<PhaseChangeModel<ReactingCloud<CloudType>>>
+            //     phaseChangeModel_;
             
-    // Protected Member Functions
+            // //- Reacting phase change model
+            // autoPtr<PhaseChangeModel<ReactingCloud<CloudType>>>
+            //     phaseChangeModel_;
 
-        //- Calculate new particle velocity
+            // //- Devolatilisation model
+            // autoPtr
+            // <
+            //     DevolatilisationModel<ReactingMultiphaseCloud<CloudType>>
+            // >
+            // devolatilisationModel_;
+
+            // //- Surface reaction model
+            // autoPtr
+            // <
+            //     SurfaceReactionModel<ReactingMultiphaseCloud<CloudType>>
+            // >
+            // surfaceReactionModel_;
+            
+
+
+        // Sources
+
+            // //- Mass transfer fields - one per carrier phase specie
+            // PtrList<volScalarField::Internal> rhoTrans_;
+   
+   // Protected Member Functions
+
+         // Initialisation
+
+            //- Set cloud sub-models
+            void setModels();
+            
         
+        // bed calculate functions
+
+            //- PreSolve 
+            void preSolve();
+            
+            //- resetSourceTerms 
+            void resetSourceTerms();
 
 
 public:
@@ -234,33 +171,7 @@ public:
             //- Return const access to active flag
             inline bool active() const;
 
-            //- Return const access to type id
-            inline label typeId() const;
-
-            //- Return const access to number of particles
-            inline scalar nParticle() const;
-
-            //- Return const access to diameter
-            inline scalar d() const;
-
-            //- Return const access to target diameter
-            inline scalar dTarget() const;
-
-            //- Return const access to velocity
-            inline const vector& U() const;
-
-            //- Return const access to density
-            inline scalar rho() const;
-
-            //- Return const access to the age
-            inline scalar age() const;
-
-            //- Return const access to time spent in turbulent eddy
-            inline scalar tTurb() const;
-
-            //- Return const access to turbulent velocity fluctuation
-            inline const vector& UTurb() const;
-
+           
 
         // Edit
 
@@ -268,95 +179,101 @@ public:
             inline bool& active();
 
             //- Return access to type id
-            inline label& typeId();
 
-            //- Return access to number of particles
-            inline scalar& nParticle();
-
-            //- Return access to diameter
-            inline scalar& d();
-
-            //- Return access to target diameter
-            inline scalar& dTarget();
-
-            //- Return access to velocity
-            inline vector& U();
-
-            //- Return access to density
-            inline scalar& rho();
-
-            //- Return access to the age
-            inline scalar& age();
-
-            //- Return access to time spent in turbulent eddy
-            inline scalar& tTurb();
-
-            //- Return access to turbulent velocity fluctuation
-            inline vector& UTurb();
-
-
+        
+        // Sub-models
+            
+            
+            
+        // Sources
+            
+            
+            
         // Helper functions
 
             //- Particle mass
             inline scalar mass() const;
 
-            //- Particle moment of inertia around diameter axis
-            inline scalar momentOfInertia() const;
-
-            //- Particle volume
-            inline scalar volume() const;
-
-            //- Particle volume for a given diameter
-            inline static scalar volume(const scalar d);
-
-            //- Particle projected area
-            inline scalar areaP() const;
-
-            //- Projected area for given diameter
-            inline static scalar areaP(const scalar d);
-
-            //- Particle surface area
-            inline scalar areaS() const;
-
-            //- Surface area for given diameter
-            inline static scalar areaS(const scalar d);
-
-
-            //- Reynolds number for given conditions
-            inline static scalar Re
-            (
-                const scalar rhoc,
-                const vector& U,
-                const vector& Uc,
-                const scalar d,
-                const scalar muc
-            );
-
-            //- Weber number for given conditions
-            inline static scalar We
-            (
-                const scalar rhoc,
-                const vector& U,
-                const vector& Uc,
-                const scalar d,
-                const scalar sigma
-            );
-
-            //- Eotvos number for given conditions
-            inline static scalar Eo
-            (
-                const vector& g,
-                const scalar rho,
-                const scalar rhoc,
-                const vector& U,
-                const scalar d,
-                const scalar sigma
-            );
+          
 
 
         // Main calculation loop
 
-            //- Set cell values
+            //- Thermo conversions
+            
+                void calcDrying();
+                
+                void calcDevo();
+                
+                void calcCharBurnOut();
+                
+                //- According to the converted dmass, update bioBedFields
+                //- including check exchange numbers between bio components
+                void dryingUpdate();
+    
+                void devoUpdate(); //?  maybe one function
+                
+                void charBurnOutUpdate(); //?  maybe one function
+                
+            //- solve heat transfer and thermo conversion
+            void solveThermoConversion(const scalar dt);
+            
+            
+            //- Reload bed functions for one bio component
+                
+                //- Reload from ThermoBed
+            
+                    //- calc one cell heat transfer
+                    scalar calcHeatTransfer
+                    (
+                        const label celli,
+                        const scalar dt,
+                        const scalar Re,
+                        const scalar Pr,
+                        const scalar kappa,
+                        const scalar NCpW,
+                        const scalar Sh,
+                        const scalar Gc,
+                        scalar& dhsTrans,
+                        scalar& Sph
+                    );
+                
+                //- Reload from basic 
+                   
+                    //- update Bed fields according to particle number change
+                    void updateBedfieldsPrompt
+                    (
+                        const label fromCell,
+                        const label toCell,
+                        const scalar number
+                    );
+                    
+                    //- update Bed fields according to particle number change
+                    //- reload function add initial particle from source
+                    void updateBedfieldsPrompt
+                    (
+                        const scalar number,
+                        const label cell,
+                        const scalar dp,
+                        const scalar dp2nd
+                    );
+                    
+                    //- update Bed fields according to particle number change
+                    //- from Cell to absorption state 
+                    void updateBedfieldsPrompt
+                    (
+                        const label cell,
+                        const scalar number
+                    );
+                    
+                    //- update Bed fields according to particle number change
+                    void updateBedfields
+                    (
+                        const labelList& ownerCells,
+                        const labelListList& ownerInteractCells,
+                        const scalarListList& number // + in, - out
+                    ); 
+                
             
 };
 
