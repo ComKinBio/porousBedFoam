@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2011-2019 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -22,15 +22,20 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::NoSurfaceReaction
+    Foam::COxidationMurphyShaddix
 
 Description
-    Dummy surface reaction model for 'none'
+    Limited to C(s) + O2 -> CO2
+
+    Loosely based on the reference:
+        Murphy, J. J., Shaddix, C. R., Combustion kinetics of coal chars
+        in oxygen-enriched environments, Combustion and Flame 144,
+        pp710-729, 2006
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef NoSurfaceReaction_H
-#define NoSurfaceReaction_H
+#ifndef COxidationMurphyShaddix_H
+#define COxidationMurphyShaddix_H
 
 #include "SurfaceReactionModel.H"
 
@@ -38,47 +43,118 @@ Description
 
 namespace Foam
 {
+
+// Forward class declarations
+template<class BedType>
+class COxidationMurphyShaddix;
+
 /*---------------------------------------------------------------------------*\
-                     Class NoSurfaceReaction Declaration
+                  Class COxidationMurphyShaddix Declaration
 \*---------------------------------------------------------------------------*/
 
 template<class BedType>
-class NoSurfaceReaction
+class COxidationMurphyShaddix
 :
     public SurfaceReactionModel<BedType>
 {
+    // Private Data
+
+        // Model constants
+
+            //- Reference diffusion constant
+            const scalar D0_;
+
+            //- Reference density for reference diffusion constant
+            const scalar rho0_;
+
+            //- Reference temperature for reference diffusion constant
+            const scalar T0_;
+
+            //- Exponent for diffusion equation
+            const scalar Dn_;
+
+            //- Kinetic rate coefficient
+            const scalar A_;
+
+            //- Kinetic rate activation energy
+            const scalar E_;
+
+            //- Reaction order
+            const scalar n_;
+
+            //- Effective molecular weight of gaseous volatiles
+            const scalar WVol_;
+
+
+        // Static constants
+
+            //- Maximum number of iterations
+            static label maxIters_;
+
+            //- Tolerance used in inner iterations
+            static scalar tolerance_;
+
+
+        // Addressing
+
+            //- Cs positions in global/local lists
+            label CsLocalId_;
+
+            //- O2 position in global list
+            label O2GlobalId_;
+
+            //- CO2 positions in global list
+            label CO2GlobalId_;
+
+
+        // Local copies of thermo properties
+
+            //- Molecular weight of C [kg/kmol]
+            scalar WC_;
+
+            //- Molecular weight of O2 [kg/kmol]
+            scalar WO2_;
+
+            //- Formation enthalpy for CO2 [J/kg]
+            scalar HcCO2_;
+
+
 public:
 
     //- Runtime type information
-    TypeName("none");
+    TypeName("COxidationMurphyShaddix");
 
 
     // Constructors
 
         //- Construct from dictionary
-        NoSurfaceReaction(const dictionary& dict, BedType& owner);
+        COxidationMurphyShaddix
+        (
+            const dictionary& dict,
+            BedType& owner
+        );
 
         //- Construct copy
-        NoSurfaceReaction(const NoSurfaceReaction<BedType>& srm);
+        COxidationMurphyShaddix
+        (
+            const COxidationMurphyShaddix<BedType>& srm
+        );
 
         //- Construct and return a clone
         virtual autoPtr<SurfaceReactionModel<BedType>> clone() const
         {
             return autoPtr<SurfaceReactionModel<BedType>>
             (
-                new NoSurfaceReaction<BedType>(*this)
+                new COxidationMurphyShaddix<BedType>(*this)
             );
         }
 
 
     //- Destructor
-    virtual ~NoSurfaceReaction();
+    virtual ~COxidationMurphyShaddix();
 
 
     // Member Functions
-
-        //- Flag to indicate whether model activates devolatisation model
-        virtual bool active() const;
 
         //- Update surface reactions
         virtual scalar calculate
@@ -109,7 +185,7 @@ public:
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #ifdef NoRepository
-    #include "NoSurfaceReaction.C"
+    #include "COxidationMurphyShaddix.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

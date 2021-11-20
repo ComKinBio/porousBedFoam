@@ -27,355 +27,354 @@ License
 
 using namespace Foam::constant::mathematical;
 
-// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
-
-template<class BedType>
-inline
-Foam::BioBed<BedType>::constantProperties::constantProperties()
-:
-    dict_(dictionary::null),
-    parcelTypeId_(dict_, -1),
-    rhoMin_(dict_, 0.0),
-    rho0_(dict_, 0.0),
-    minParcelMass_(dict_, 0.0)
-{}
-
-
-template<class BedType>
-inline Foam::BioBed<BedType>::constantProperties::constantProperties
-(
-    const constantProperties& cp
-)
-:
-    dict_(cp.dict_),
-    parcelTypeId_(cp.parcelTypeId_),
-    rhoMin_(cp.rhoMin_),
-    rho0_(cp.rho0_),
-    minParcelMass_(cp.minParcelMass_)
-{}
-
-
-template<class BedType>
-inline Foam::BioBed<BedType>::constantProperties::constantProperties
-(
-    const dictionary& parentDict
-)
-:
-    dict_(parentDict.subOrEmptyDict("constantProperties")),
-    parcelTypeId_(dict_, "parcelTypeId", -1),
-    rhoMin_(dict_, "rhoMin", 1e-15),
-    rho0_(dict_, "rho0"),
-    minParcelMass_(dict_, "minParcelMass", 1e-15)
-{}
-
-
-template<class BedType>
-inline Foam::BioBed<BedType>::BioBed
-(
-    const polyMesh& mesh,
-    const vector coarseGridOrigin_,
-    const vector coarseGridVertex_,
-    const scalar coarseGridSize_  
-)
-:
-    BedType(mesh, coarseGridOrigin_, coarseGridVertex_, coarseGridSize_),
-    active_(true),
-    typeId_(-1),
-    nParticle_(0),
-    d_(0.0),
-    dTarget_(0.0),
-    U_(Zero),
-    rho_(0.0),
-    age_(0.0),
-    tTurb_(0.0),
-    UTurb_(Zero)
-{}
-
-
-
-
-// * * * * * * * * * constantProperties Member Functions * * * * * * * * * * //
-
-template<class BedType>
-inline const Foam::dictionary&
-Foam::BioBed<BedType>::constantProperties::dict() const
-{
-    return dict_;
-}
-
-
-template<class BedType>
-inline Foam::label
-Foam::BioBed<BedType>::constantProperties::parcelTypeId() const
-{
-    return parcelTypeId_.value();
-}
-
-
-template<class BedType>
-inline Foam::scalar
-Foam::BioBed<BedType>::constantProperties::rhoMin() const
-{
-    return rhoMin_.value();
-}
-
-
-template<class BedType>
-inline Foam::scalar
-Foam::BioBed<BedType>::constantProperties::rho0() const
-{
-    return rho0_.value();
-}
-
-
-template<class BedType>
-inline Foam::scalar
-Foam::BioBed<BedType>::constantProperties::minParcelMass() const
-{
-    return minParcelMass_.value();
-}
-
-
 // * * * * * * * BioBed Member Functions  * * * * * * * //
 
 template<class BedType>
-inline bool Foam::BioBed<BedType>::active() const
+inline const Foam::MassTransferModel<Foam::BioBed<BedType>>&
+Foam::BioBed<BedType>::massTransfer() const
 {
-    return active_;
+    return massTransferModel_;
 }
 
 
 template<class BedType>
-inline Foam::label Foam::BioBed<BedType>::typeId() const
+inline const Foam::DryingModel<Foam::BioBed<BedType>>&
+Foam::BioBed<BedType>::drying() const
 {
-    return typeId_;
+    return dryingModel_;
 }
 
 
 template<class BedType>
-inline Foam::scalar Foam::BioBed<BedType>::nParticle() const
+inline const Foam::DevolatilisationModel<Foam::BioBed<BedType>>&
+Foam::BioBed<BedType>::devolatilisation() const
 {
-    return nParticle_;
+    return devolatilisationModel_;
 }
 
 
 template<class BedType>
-inline Foam::scalar Foam::BioBed<BedType>::d() const
+inline Foam::SurfaceReactionModel<Foam::BioBed<BedType>>&
+Foam::BioBed<BedType>::surfaceReaction()
 {
-    return d_;
+    return surfaceReactionModel_;
 }
 
 
 template<class BedType>
-inline Foam::scalar Foam::BioBed<BedType>::dTarget() const
+inline Foam::MassTransferModel<Foam::BioBed<BedType>>&
+Foam::BioBed<BedType>::massTransfer()
 {
-    return dTarget_;
+    return massTransferModel_();
 }
 
 
 template<class BedType>
-inline const Foam::vector& Foam::BioBed<BedType>::U() const
+inline Foam::DryingModel<Foam::BioBed<BedType>>&
+Foam::BioBed<BedType>::drying()
 {
-    return U_;
+    return dryingModel_();
 }
 
 
 template<class BedType>
-inline Foam::scalar Foam::BioBed<BedType>::rho() const
+inline Foam::DevolatilisationModel<Foam::BioBed<BedType>>&
+Foam::BioBed<BedType>::devolatilisation()
 {
-    return rho_;
+    return devolatilisationModel_();
+}
+
+
+
+template<class BedType>
+inline Foam::SurfaceReactionModel<Foam::BioBed<BedType>>&
+Foam::BioBed<BedType>::surfaceReaction()
+{
+    return surfaceReactionModel_();
 }
 
 
 template<class BedType>
-inline Foam::scalar Foam::BioBed<BedType>::age() const
+inline bool Foam::BioBed<BedType>::massExplicit() const
 {
-    return age_;
+    return massExplicit_;
 }
 
 
 template<class BedType>
-inline Foam::scalar Foam::BioBed<BedType>::tTurb() const
+inline bool Foam::BioBed<BedType>::speciesExplicit() const
 {
-    return tTurb_;
+    return speciesExplicit_;
 }
 
 
 template<class BedType>
-inline const Foam::vector& Foam::BioBed<BedType>::UTurb() const
+inline bool Foam::BioBed<BedType>::randomConvesion() const
 {
-    return UTurb_;
+    return randomConvesion_;
 }
 
 
 template<class BedType>
-inline bool& Foam::BioBed<BedType>::active()
+inline Foam::scalar Foam::BioBed<BedType>::TDevol() const
 {
-    return active_;
+    return TDevol_.value();
 }
 
 
 template<class BedType>
-inline Foam::label& Foam::BioBed<BedType>::typeId()
+inline Foam::scalar Foam::BioBed<BedType>::LDevol() const
 {
-    return typeId_;
+    return LDevol_.value();
 }
 
 
 template<class BedType>
-inline Foam::scalar& Foam::BioBed<BedType>::nParticle()
+inline Foam::scalar Foam::BioBed<BedType>::shrinkageFactorAlpha() const
 {
-    return nParticle_;
+    return shrinkageFactorAlpha_.value();
+}
+
+template<class BedType>
+inline Foam::scalar Foam::BioBed<BedType>::shrinkageFactorBeta() const
+{
+    return shrinkageFactorBeta_.value();
+}
+
+template<class BedType>
+inline Foam::scalar Foam::BioBed<BedType>::shrinkageFactorGamma() const
+{
+    return shrinkageFactorGamma_.value();
 }
 
 
 template<class BedType>
-inline Foam::scalar& Foam::BioBed<BedType>::d()
+inline Foam::scalar Foam::BioBed<BedType>::::
+hRetentionCoeff() const
 {
-    return d_;
+    scalar value = hRetentionCoeff_.value();
+
+    if ((value < 0) || (value > 1))
+    {
+        FatalErrorInFunction
+            << "hRetentionCoeff must be in the range 0 to 1" << nl
+            << exit(FatalError) << endl;
+    }
+    
+    return value;
 }
 
 
-template<class BedType>
-inline Foam::scalar& Foam::BioBed<BedType>::dTarget()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template<class CloudType>
+inline Foam::DimensionedField<Foam::scalar, Foam::volMesh>&
+Foam::ReactingCloud<CloudType>::rhoTrans(const label i)
 {
-    return dTarget_;
+    return rhoTrans_[i];
 }
 
 
-template<class BedType>
-inline Foam::vector& Foam::BioBed<BedType>::U()
+template<class CloudType>
+inline
+const Foam::PtrList<Foam::DimensionedField<Foam::scalar, Foam::volMesh>>&
+Foam::ReactingCloud<CloudType>::rhoTrans() const
 {
-    return U_;
+    return rhoTrans_;
 }
 
 
-template<class BedType>
-inline Foam::scalar& Foam::BioBed<BedType>::rho()
+template<class CloudType>
+inline Foam::PtrList<Foam::DimensionedField<Foam::scalar, Foam::volMesh>>&
+Foam::ReactingCloud<CloudType>::rhoTrans()
 {
-    return rho_;
+    return rhoTrans_;
 }
 
 
-template<class BedType>
-inline Foam::scalar& Foam::BioBed<BedType>::age()
-{
-    return age_;
-}
-
-
-template<class BedType>
-inline Foam::scalar& Foam::BioBed<BedType>::tTurb()
-{
-    return tTurb_;
-}
-
-
-template<class BedType>
-inline Foam::vector& Foam::BioBed<BedType>::UTurb()
-{
-    return UTurb_;
-}
-
-
-template<class BedType>
-inline Foam::scalar Foam::BioBed<BedType>::mass() const
-{
-    return rho_*volume();
-}
-
-
-template<class BedType>
-inline Foam::scalar Foam::BioBed<BedType>::momentOfInertia() const
-{
-    return 0.1*mass()*sqr(d_);
-}
-
-
-template<class BedType>
-inline Foam::scalar Foam::BioBed<BedType>::volume() const
-{
-    return volume(d_);
-}
-
-
-template<class BedType>
-inline Foam::scalar Foam::BioBed<BedType>::volume(const scalar d)
-{
-    return pi/6.0*pow3(d);
-}
-
-
-template<class BedType>
-inline Foam::scalar Foam::BioBed<BedType>::areaP() const
-{
-    return areaP(d_);
-}
-
-
-template<class BedType>
-inline Foam::scalar Foam::BioBed<BedType>::areaP(const scalar d)
-{
-    return 0.25*areaS(d);
-}
-
-
-template<class BedType>
-inline Foam::scalar Foam::BioBed<BedType>::areaS() const
-{
-    return areaS(d_);
-}
-
-
-template<class BedType>
-inline Foam::scalar Foam::BioBed<BedType>::areaS(const scalar d)
-{
-    return pi*d*d;
-}
-
-
-template<class BedType>
-inline Foam::scalar Foam::BioBed<BedType>::Re
+template<class CloudType>
+inline Foam::tmp<Foam::fvScalarMatrix> Foam::ReactingCloud<CloudType>::SYi
 (
-    const scalar rhoc,
-    const vector& U,
-    const vector& Uc,
-    const scalar d,
-    const scalar muc
+    const label i,
+    volScalarField& Yi
+) const
+{
+    if (this->solution().coupled())
+    {
+        if (this->solution().semiImplicit("Yi"))
+        {
+            tmp<volScalarField> trhoTrans
+            (
+                volScalarField::New
+                (
+                    this->name() + ":rhoTrans",
+                    this->mesh(),
+                    dimensionedScalar(dimMass/dimTime/dimVolume, 0)
+                )
+            );
+
+            volScalarField& sourceField = trhoTrans.ref();
+
+            sourceField.primitiveFieldRef() =
+                rhoTrans_[i]/(this->db().time().deltaTValue()*this->mesh().V());
+
+            const dimensionedScalar Yismall("Yismall", dimless, small);
+
+            return
+                fvm::Sp(neg(sourceField)*sourceField/(Yi + Yismall), Yi)
+              + pos0(sourceField)*sourceField;
+        }
+        else
+        {
+            tmp<fvScalarMatrix> tfvm(new fvScalarMatrix(Yi, dimMass/dimTime));
+            fvScalarMatrix& fvm = tfvm.ref();
+
+            fvm.source() = -rhoTrans_[i]/this->db().time().deltaTValue();
+
+            return tfvm;
+        }
+    }
+
+    return tmp<fvScalarMatrix>(new fvScalarMatrix(Yi, dimMass/dimTime));
+}
+
+
+template<class CloudType>
+inline Foam::tmp<Foam::DimensionedField<Foam::scalar, Foam::volMesh>>
+Foam::ReactingCloud<CloudType>::Srho(const label i) const
+{
+    tmp<volScalarField::Internal> tRhoi
+    (
+        volScalarField::Internal::New
+        (
+            this->name() + ":rhoTrans",
+            this->mesh(),
+            dimensionedScalar
+            (
+                rhoTrans_[0].dimensions()/dimTime/dimVolume,
+                0
+            )
+        )
+    );
+
+    if (this->solution().coupled())
+    {
+        scalarField& rhoi = tRhoi.ref();
+        rhoi = rhoTrans_[i]/(this->db().time().deltaTValue()*this->mesh().V());
+    }
+
+    return tRhoi;
+}
+
+
+template<class CloudType>
+inline Foam::tmp<Foam::DimensionedField<Foam::scalar, Foam::volMesh>>
+Foam::ReactingCloud<CloudType>::Srho() const
+{
+    tmp<volScalarField::Internal> trhoTrans
+    (
+        volScalarField::Internal::New
+        (
+            this->name() + ":rhoTrans",
+            this->mesh(),
+            dimensionedScalar
+            (
+                rhoTrans_[0].dimensions()/dimTime/dimVolume,
+                0
+            )
+        )
+    );
+
+    if (this->solution().coupled())
+    {
+        scalarField& sourceField = trhoTrans.ref();
+        forAll(rhoTrans_, i)
+        {
+            sourceField += rhoTrans_[i];
+        }
+
+        sourceField /= this->db().time().deltaTValue()*this->mesh().V();
+    }
+
+    return trhoTrans;
+}
+
+
+template<class CloudType>
+inline Foam::tmp<Foam::fvScalarMatrix>
+Foam::ReactingCloud<CloudType>::Srho(volScalarField& rho) const
+{
+    if (this->solution().coupled())
+    {
+        tmp<volScalarField> trhoTrans
+        (
+            volScalarField::New
+            (
+                this->name() + ":rhoTrans",
+                this->mesh(),
+                dimensionedScalar(dimMass/dimTime/dimVolume, 0)
+            )
+        );
+
+        scalarField& sourceField = trhoTrans.ref();
+
+        if (this->solution().semiImplicit("rho"))
+        {
+
+            forAll(rhoTrans_, i)
+            {
+                sourceField += rhoTrans_[i];
+            }
+            sourceField /= this->db().time().deltaTValue()*this->mesh().V();
+
+            return fvm::SuSp(trhoTrans()/rho, rho);
+        }
+        else
+        {
+            tmp<fvScalarMatrix> tfvm(new fvScalarMatrix(rho, dimMass/dimTime));
+            fvScalarMatrix& fvm = tfvm.ref();
+
+            forAll(rhoTrans_, i)
+            {
+                sourceField += rhoTrans_[i];
+            }
+
+            fvm.source() = -trhoTrans()/this->db().time().deltaT();
+
+            return tfvm;
+        }
+    }
+
+    return tmp<fvScalarMatrix>(new fvScalarMatrix(rho, dimMass/dimTime));
+}
+
+template<class CloudType>
+inline scalar dpAfterShrink
+(
+    const scalar dp, 
+    const scalar mass,
+    const scalar dmass,
+    const scalar shrinkage
 )
 {
-    return rhoc*mag(U - Uc)*d/max(muc, rootVSmall);
+    const scalar VpOldcube = pow3(dp);
+    const scalar rhopcube = mass/VpOldcube;
+    
+    const scalar dVpcube = dmass/rhopcube*shrinkage;
+    
+    return cbrt(VpOldcube - dVpcube);
 }
-
-
-template<class BedType>
-inline Foam::scalar Foam::BioBed<BedType>::We
-(
-    const scalar rhoc,
-    const vector& U,
-    const vector& Uc,
-    const scalar d,
-    const scalar sigma
-)
-{
-    return rhoc*magSqr(U - Uc)*d/max(sigma, rootVSmall);
-}
-
-
-template<class BedType>
-inline Foam::scalar Foam::BioBed<BedType>::Eo
-(
-    const vector& g,
-    const scalar rho,
-    const scalar rhoc,
-    const vector& U,
-    const scalar d,
-    const scalar sigma
-)
-{
-    const vector dir = U/max(mag(U), rootVSmall);
-    return mag(g & dir)*(rho - rhoc)*sqr(d)/max(sigma, rootVSmall);
-}
-
 
 // ************************************************************************* //

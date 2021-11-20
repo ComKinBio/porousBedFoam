@@ -1,0 +1,27 @@
+    if(randomConvesion())
+                {
+                    npWet[celli]
+                    dWet[celli]
+                    d2ndWet[celli]
+                    dWet[celli]
+                    mass0Water[celli]
+                    w[celli]
+                    
+                    
+                    shrinkageFactorAlpha()
+                    
+                    npDry[celli]
+                    dDry[celli]
+                    d2ndDry[celli]
+                    dDry[celli]
+                    mass0Dry[celli]
+                    gamma[celli]
+                }
+                else
+                {
+                    dWet[celli]
+                    d2ndWet[celli]
+                    dWet[celli]
+                    mass0Water[celli]
+                    w[celli]
+                }

@@ -22,32 +22,32 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::NoDevolatilisation
+    Foam::NoMassTransfer
 
 Description
-    Dummy devolatilisation model for 'none'
+    Dummy heat transfer model for 'none'
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef NoDevolatilisation_H
-#define NoDevolatilisation_H
+#ifndef NoMassTransfer_H
+#define NoMassTransfer_H
 
-#include "DevolatilisationModel.H"
+#include "MassTransferModel.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
 {
+
 /*---------------------------------------------------------------------------*\
-                     Class NoDevolatilisation Declaration
+                       Class NoMassTransfer Declaration
 \*---------------------------------------------------------------------------*/
 
 template<class BedType>
-class NoDevolatilisation
+class NoMassTransfer
 :
-    public DevolatilisationModel<BedType>
+    public MassTransferModel<BedType>
 {
-
 public:
 
     //- Runtime type information
@@ -57,43 +57,35 @@ public:
     // Constructors
 
         //- Construct from dictionary
-        NoDevolatilisation(const dictionary&, BedType& owner);
+        NoMassTransfer(const dictionary&, BedType& owner);
 
         //- Construct copy
-        NoDevolatilisation(const NoDevolatilisation<BedType>& dm);
+        NoMassTransfer(const NoMassTransfer<BedType>& im);
 
         //- Construct and return a clone
-        virtual autoPtr<DevolatilisationModel<BedType>> clone() const
+        virtual autoPtr<MassTransferModel<BedType>> clone() const
         {
-            return autoPtr<DevolatilisationModel<BedType>>
+            return autoPtr<MassTransferModel<BedType>>
             (
-                new NoDevolatilisation<BedType>(*this)
+                new NoMassTransfer<BedType>(*this)
             );
         }
 
 
     //- Destructor
-    virtual ~NoDevolatilisation();
+    virtual ~NoMassTransfer();
 
 
     // Member Functions
 
-        //- Flag to indicate whether model activates devolatilisation model
+        //- Flag to indicate whether model activates heat transfer model
         virtual bool active() const;
 
-        //- Update model
-        virtual void calculate
-        (
-            const scalar dt,
-            const scalar age,
-            const scalar mass0,
-            const scalar mass,
-            const scalar T,
-            label& canCombust,
-            scalar& dMass,
-            scalarField& dMassDV,
-            scalar& dMassChar
-        ) const;
+        //- Sherwood number
+        virtual scalar Sh(const scalar, const scalar) const;
+
+        //- Schmidt number
+        virtual scalar Sc() const;
 };
 
 
@@ -104,7 +96,7 @@ public:
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #ifdef NoRepository
-    #include "NoDevolatilisation.C"
+    #include "NoMassTransfer.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

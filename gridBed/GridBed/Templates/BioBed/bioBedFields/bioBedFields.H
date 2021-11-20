@@ -81,11 +81,25 @@ protected:
         //- Parcel properties dictionary
         const dictionary bioProperties_;
         
+        //- Fields constant properties
+        
+            //- Initial moisture wet based
+            demandDrivenEntry<scalar> moisture_
+            
+            //- Initial ash content dry based
+            demandDrivenEntry<scalar> ashContent_ 
+            
+            //- Initial ash porosity is not changed
+            demandDrivenEntry<scalar> ashFixedPorosity_
+        
         
         // bioField components properties, list size = 4
             
             //- Particle material density [kg/m^3]
             List<autoPtr<demandDrivenEntry<scalar>>> rhopPtrList_;
+            
+             //- Particle initial diameter
+            List<autoPtr<demandDrivenEntry<scalar>>> dp0PtrList_;
             
             //- Particle initial temperature [K]
             List<autoPtr<demandDrivenEntry<scalar>>> T0PtrList_;
@@ -113,6 +127,9 @@ protected:
             
             //- surface average diameter of the particle fields [m]
             List<autoPtr<volScalarField>> dp2ndPtrList_;
+            
+            //- mass of the particle fields [m]
+            List<autoPtr<volScalarField>> massPtrList_;
             
             //- Particle temperature field
             List<autoPtr<volScalarField>> bedTPtrList_;
@@ -150,7 +167,8 @@ public:
         bioBedFields(const bioBedFields&) = delete;
 
         //- Destructor
-        virtual ~bioBedFields();
+        virtual ~bioBedFields()
+        {}
 
 
 
@@ -158,8 +176,20 @@ public:
 
         // Access
         
+             //- Return const access to moisture wet based
+            inline scalar moisture() const;
+            
+            //- Return const access to ash content dry based
+            inline scalar ashContent() const;
+            
+            //- Return const access to initial ash porosity
+            inline scalar ashFixedPorosity() const;
+        
             //- Return const access to rhop [kg/m^3]
             inline scalar rhope(particlePhase e) const;
+            
+            //- Return const access to initial diameter [kg/m^3]
+            inline scalar dp0e(particlePhase e) const;
             
             //- Return const access to initial temperature [K]
             inline scalar T0e(particlePhase e) const;
@@ -188,6 +218,9 @@ public:
             //- Return access to particle surface average diameter
             inline volScalarField& dp2nde(particlePhase e);
             
+            //- Return access to volume average diameter
+            inline volScalarField& masse(particlePhase e);
+            
             //- Return access to components temperature field
             inline volScalarField& bedTe(particlePhase e);
             
@@ -205,6 +238,9 @@ public:
             
             //- Return access to ash/char ratio in char_
             inline volScalarField& eta_percent();
+            
+            //- Return access to ash porosity
+            inline volScalarField& ash_porosity();
 
             
 };

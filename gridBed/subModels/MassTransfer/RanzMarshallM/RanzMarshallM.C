@@ -23,82 +23,46 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "SurfaceReactionModel.H"
+#include "RanzMarshallM.H"
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 template<class BedType>
-Foam::SurfaceReactionModel<BedType>::SurfaceReactionModel
-(
-    BedType& owner
-)
-:
-    BedSubModelBase<BedType>(owner),
-    dMass_(0.0)
-{}
-
-
-template<class BedType>
-Foam::SurfaceReactionModel<BedType>::SurfaceReactionModel
+Foam::RanzMarshallM<BedType>::RanzMarshallM
 (
     const dictionary& dict,
-    BedType& owner,
-    const word& type
+    BedType& bed
 )
 :
-    BedSubModelBase<BedType>(owner, dict, typeName, type),
-    dMass_(0.0)
+    MassTransferModel<BedType>(dict, bed, typeName)
 {}
 
 
 template<class BedType>
-Foam::SurfaceReactionModel<BedType>::SurfaceReactionModel
-(
-    const SurfaceReactionModel<BedType>& srm
-)
+Foam::RanzMarshallM<BedType>::RanzMarshallM(const RanzMarshallM<BedType>& htm)
 :
-    BedSubModelBase<BedType>(srm),
-    dMass_(srm.dMass_)
+    MassTransferModel<BedType>(htm)
 {}
 
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
 template<class BedType>
-Foam::SurfaceReactionModel<BedType>::~SurfaceReactionModel()
+Foam::RanzMarshallM<BedType>::~RanzMarshallM()
 {}
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 template<class BedType>
-void Foam::SurfaceReactionModel<BedType>::addToSurfaceReactionMass
+Foam::scalar Foam::RanzMarshallM<BedType>::Sh
 (
-    const scalar dMass
-)
+    const scalar Re,
+    const scalar Sc
+) const
 {
-    dMass_ += dMass;
+    return 2.0 + 0.6*sqrt(Re)*cbrt(Sc);
 }
 
-
-template<class BedType>
-void Foam::SurfaceReactionModel<BedType>::info(Ostream& os)
-{
-    const scalar mass0 = this->template getBaseProperty<scalar>("mass");
-    const scalar massTotal = mass0 + returnReduce(dMass_, sumOp<scalar>());
-
-    Info<< "    Mass transfer surface reaction  = " << massTotal << nl;
-
-    if (this->writeTime())
-    {
-        this->setBaseProperty("mass", massTotal);
-        dMass_ = 0.0;
-    }
-}
-
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-#include "SurfaceReactionModelNew.C"
 
 // ************************************************************************* //

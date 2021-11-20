@@ -26,9 +26,37 @@ License
 // * * * * * * * * * constantProperties Member Functions * * * * * * * * * * //
 
 inline Foam::scalar
+Foam::bioBedFields::moisture() const
+{
+    return rmoisture_.value();
+}
+
+
+inline Foam::scalar
+Foam::bioBedFields::ashContent() const
+{
+    return ashContent_.value();
+}
+
+
+inline Foam::scalar
+Foam::bioBedFields::ashFixedPorosity() const
+{
+    return ashFixedPorosity_.value();
+}
+
+
+inline Foam::scalar
 Foam::bioBedFields::rhope(particlePhase e) const
 {
     return rhopPtrList_[e]().value();
+}
+
+
+inline Foam::scalar
+Foam::bioBedFields::dp0e(particlePhase e) const
+{
+    return dp0PtrList_[e]().value();
 }
 
 
@@ -89,6 +117,13 @@ Foam::bioBedFields::dp2nde(particlePhase e)
 
 
 inline Foam::volScalarField&
+Foam::bioBedFields::masse(particlePhase e)
+{
+    return massPtrList_[e]();
+}
+
+
+inline Foam::volScalarField&
 Foam::bioBedFields::bedTe(particlePhase e)
 {
     return bedTPtrList_[e]();
@@ -127,6 +162,13 @@ inline Foam::volScalarField&
 Foam::bioBedFields::eta_percent()
 {
     return conversionRatio_[char_]();
+}
+
+
+inline Foam::volScalarField&
+Foam::bioBedFields::ash_porosity()
+{
+    return conversionRatio_[ash_]();
 }
 
 // ************************************************************************* //

@@ -27,12 +27,12 @@ License
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-template<class CloudType>
-Foam::autoPtr<Foam::SurfaceReactionModel<CloudType>>
-Foam::SurfaceReactionModel<CloudType>::New
+template<class BedType>
+Foam::autoPtr<Foam::SurfaceReactionModel<BedType>>
+Foam::SurfaceReactionModel<BedType>::New
 (
     const dictionary& dict,
-    CloudType& owner
+    BedType& owner
 )
 {
     const word modelType(dict.lookup("surfaceReactionModel"));
@@ -52,7 +52,7 @@ Foam::SurfaceReactionModel<CloudType>::New
             << exit(FatalError);
     }
 
-    return autoPtr<SurfaceReactionModel<CloudType>>(cstrIter()(dict, owner));
+    return autoPtr<SurfaceReactionModel<BedType>>(cstrIter()(dict, owner));
 }
 
 

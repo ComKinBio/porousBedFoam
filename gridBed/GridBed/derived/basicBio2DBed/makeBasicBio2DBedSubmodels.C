@@ -23,69 +23,19 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "NoSurfaceReaction.H"
+#include "basicBio2DBed.H"
 
-// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+// Kinematic
+#include "makeParcelMassTransferModels.H"
+#include "makeBioParcelDryingModels.H"
+#include "makeBioParcelDevolatilisationModels.H"
+#include "makeBioParcelSurfaceReactionModels.H"
 
-template<class BedType>
-Foam::NoSurfaceReaction<BedType>::NoSurfaceReaction
-(
-    const dictionary&,
-    BedType& owner
-)
-:
-    SurfaceReactionModel<BedType>(owner)
-{}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-
-template<class BedType>
-Foam::NoSurfaceReaction<BedType>::NoSurfaceReaction
-(
-    const NoSurfaceReaction<BedType>& srm
-)
-:
-    SurfaceReactionModel<BedType>(srm.owner_)
-{}
-
-
-// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
-
-template<class BedType>
-Foam::NoSurfaceReaction<BedType>::~NoSurfaceReaction()
-{}
-
-
-// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
-
-template<class BedType>
-bool Foam::NoSurfaceReaction<BedType>::active() const
-{
-    return false;
-}
-
-
-template<class BedType>
-Foam::scalar Foam::NoSurfaceReaction<BedType>::calculate
-(
-    const scalar,
-    const label,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    scalar&,
-    scalarField&
-) const
-{
-    return 0;
-}
-
-
+// Kinematic sub-models
+makeParcelMassTransferModels(basicBio2DBed);
+makeBioParcelDryingModels(basicBio2DBed);
+makeBioParcelDevolatilisationModels(basicBio2DBed);
+makeBioParcelSurfaceReactionModels(basicBio2DBed);
 // ************************************************************************* //

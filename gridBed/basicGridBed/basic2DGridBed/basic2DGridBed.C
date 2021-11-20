@@ -74,6 +74,7 @@ Foam::basic2DGridBed::basic2DGridBed
     particleProperties_(bedProperties_.subOrEmptyDict("particleProperties")),
     constProperties_(bedProperties_.subOrEmptyDict("constantProperties")),
     subModelProperties_(bedProperties_.subOrEmptyDict("subModels")),
+    rndGen_(0),
     fluidGridCellCenters_(mesh.cellCentres()),
     fluidGridCellVolumes_(mesh.cellVolumes()),
     rho_(rho),
@@ -84,6 +85,7 @@ Foam::basic2DGridBed::basic2DGridBed
     momentumExplicit_(true),
     alphaMin_(constProperties_.lookupOrDefault<scalar>("alphaMin", 0.01)),
     rhop_(particleProperties_, "rhop"),
+    sphericity_(particleProperties_, "sphericity"),
     particleNumber_
     (
         IOobject

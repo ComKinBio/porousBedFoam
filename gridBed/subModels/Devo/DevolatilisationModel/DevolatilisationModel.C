@@ -27,52 +27,52 @@ License
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-template<class CloudType>
-Foam::DevolatilisationModel<CloudType>::DevolatilisationModel
+template<class BedType>
+Foam::DevolatilisationModel<BedType>::DevolatilisationModel
 (
-    CloudType& owner
+    BedType& owner
 )
 :
-    CloudSubModelBase<CloudType>(owner),
+    BedSubModelBase<BedType>(owner),
     dMass_(0.0)
 {}
 
 
-template<class CloudType>
-Foam::DevolatilisationModel<CloudType>::DevolatilisationModel
+template<class BedType>
+Foam::DevolatilisationModel<BedType>::DevolatilisationModel
 (
     const dictionary& dict,
-    CloudType& owner,
+    BedType& owner,
     const word& type
 )
 :
-    CloudSubModelBase<CloudType>(owner, dict, typeName, type),
+    BedSubModelBase<BedType>(owner, dict, typeName, type),
     dMass_(0.0)
 {}
 
 
-template<class CloudType>
-Foam::DevolatilisationModel<CloudType>::DevolatilisationModel
+template<class BedType>
+Foam::DevolatilisationModel<BedType>::DevolatilisationModel
 (
-    const DevolatilisationModel<CloudType>& dm
+    const DevolatilisationModel<BedType>& dm
 )
 :
-    CloudSubModelBase<CloudType>(dm),
+    BedSubModelBase<BedType>(dm),
     dMass_(dm.dMass_)
 {}
 
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
-template<class CloudType>
-Foam::DevolatilisationModel<CloudType>::~DevolatilisationModel()
+template<class BedType>
+Foam::DevolatilisationModel<BedType>::~DevolatilisationModel()
 {}
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-template<class CloudType>
-void Foam::DevolatilisationModel<CloudType>::addToDevolatilisationMass
+template<class BedType>
+void Foam::DevolatilisationModel<BedType>::addToDevolatilisationMass
 (
     const scalar dMass
 )
@@ -81,8 +81,8 @@ void Foam::DevolatilisationModel<CloudType>::addToDevolatilisationMass
 }
 
 
-template<class CloudType>
-void Foam::DevolatilisationModel<CloudType>::info(Ostream& os)
+template<class BedType>
+void Foam::DevolatilisationModel<BedType>::info(Ostream& os)
 {
     const scalar mass0 = this->template getBaseProperty<scalar>("mass");
     const scalar massTotal = mass0 + returnReduce(dMass_, sumOp<scalar>());

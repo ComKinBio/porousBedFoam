@@ -23,82 +23,63 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "SurfaceReactionModel.H"
+#include "NoMassTransfer.H"
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 template<class BedType>
-Foam::SurfaceReactionModel<BedType>::SurfaceReactionModel
+Foam::NoMassTransfer<BedType>::NoMassTransfer
 (
+    const dictionary&,
     BedType& owner
 )
 :
-    BedSubModelBase<BedType>(owner),
-    dMass_(0.0)
+    MassTransferModel<BedType>(owner)
 {}
 
 
 template<class BedType>
-Foam::SurfaceReactionModel<BedType>::SurfaceReactionModel
+Foam::NoMassTransfer<BedType>::NoMassTransfer
 (
-    const dictionary& dict,
-    BedType& owner,
-    const word& type
+    const NoMassTransfer<BedType>& htm
 )
 :
-    BedSubModelBase<BedType>(owner, dict, typeName, type),
-    dMass_(0.0)
-{}
-
-
-template<class BedType>
-Foam::SurfaceReactionModel<BedType>::SurfaceReactionModel
-(
-    const SurfaceReactionModel<BedType>& srm
-)
-:
-    BedSubModelBase<BedType>(srm),
-    dMass_(srm.dMass_)
+    MassTransferModel<BedType>(htm.owner_)
 {}
 
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
 template<class BedType>
-Foam::SurfaceReactionModel<BedType>::~SurfaceReactionModel()
+Foam::NoMassTransfer<BedType>::~NoMassTransfer()
 {}
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 template<class BedType>
-void Foam::SurfaceReactionModel<BedType>::addToSurfaceReactionMass
-(
-    const scalar dMass
-)
+bool Foam::NoMassTransfer<BedType>::active() const
 {
-    dMass_ += dMass;
+    return false;
 }
 
 
 template<class BedType>
-void Foam::SurfaceReactionModel<BedType>::info(Ostream& os)
+Foam::scalar Foam::NoMassTransfer<BedType>::Sh
+(
+    const scalar,
+    const scalar
+) const
 {
-    const scalar mass0 = this->template getBaseProperty<scalar>("mass");
-    const scalar massTotal = mass0 + returnReduce(dMass_, sumOp<scalar>());
-
-    Info<< "    Mass transfer surface reaction  = " << massTotal << nl;
-
-    if (this->writeTime())
-    {
-        this->setBaseProperty("mass", massTotal);
-        dMass_ = 0.0;
-    }
+    return 0.0;
 }
 
 
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+template<class BedType>
+Foam::scalar Foam::NoMassTransfer<BedType>::Sc() const
+{
+    return 1.0;
+}
 
-#include "SurfaceReactionModelNew.C"
 
 // ************************************************************************* //

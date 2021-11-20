@@ -23,21 +23,21 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "PhaseChangeModel.H"
+#include "MassTransferModel.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-template<class CloudType>
-Foam::autoPtr<Foam::PhaseChangeModel<CloudType>>
-Foam::PhaseChangeModel<CloudType>::New
+template<class BedType>
+Foam::autoPtr<Foam::MassTransferModel<BedType>>
+Foam::MassTransferModel<BedType>::New
 (
     const dictionary& dict,
-    CloudType& owner
+    BedType& owner
 )
 {
-    const word modelType(dict.lookup("phaseChangeModel"));
+    const word modelType(dict.lookup("massTransferModel"));
 
-    Info<< "Selecting phase change model " << modelType << endl;
+    Info<< "Selecting heat transfer model " << modelType << endl;
 
     typename dictionaryConstructorTable::iterator cstrIter =
         dictionaryConstructorTablePtr_->find(modelType);
@@ -45,14 +45,14 @@ Foam::PhaseChangeModel<CloudType>::New
     if (cstrIter == dictionaryConstructorTablePtr_->end())
     {
         FatalErrorInFunction
-            << "Unknown phase change model type "
+            << "Unknown heat transfer model type "
             << modelType << nl << nl
-            << "Valid phase change model types are:" << nl
+            << "Valid heat transfer model types are:" << nl
             << dictionaryConstructorTablePtr_->sortedToc()
             << exit(FatalError);
     }
 
-    return autoPtr<PhaseChangeModel<CloudType>>(cstrIter()(dict, owner));
+    return autoPtr<MassTransferModel<BedType>>(cstrIter()(dict, owner));
 }
 
 

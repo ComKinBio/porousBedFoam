@@ -22,78 +22,71 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::NoDevolatilisation
+    Foam::RanzMarshallM
 
 Description
-    Dummy devolatilisation model for 'none'
+    The Ranz-Marshall correlation for heat transfer
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef NoDevolatilisation_H
-#define NoDevolatilisation_H
+#ifndef RanzMarshallM_H
+#define RanzMarshallM_H
 
-#include "DevolatilisationModel.H"
+#include "MassTransferModel.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
 {
+
 /*---------------------------------------------------------------------------*\
-                     Class NoDevolatilisation Declaration
+                         Class RanzMarshallM Declaration
 \*---------------------------------------------------------------------------*/
 
 template<class BedType>
-class NoDevolatilisation
+class RanzMarshallM
 :
-    public DevolatilisationModel<BedType>
+    public MassTransferModel<BedType>
 {
 
 public:
 
     //- Runtime type information
-    TypeName("none");
+    TypeName("RanzMarshall");
 
 
     // Constructors
 
         //- Construct from dictionary
-        NoDevolatilisation(const dictionary&, BedType& owner);
+        RanzMarshallM(const dictionary& dict, BedType& bed);
 
         //- Construct copy
-        NoDevolatilisation(const NoDevolatilisation<BedType>& dm);
+        RanzMarshallM(const RanzMarshallM<BedType>& im);
 
         //- Construct and return a clone
-        virtual autoPtr<DevolatilisationModel<BedType>> clone() const
+        virtual autoPtr<MassTransferModel<BedType>> clone() const
         {
-            return autoPtr<DevolatilisationModel<BedType>>
+            return autoPtr<MassTransferModel<BedType>>
             (
-                new NoDevolatilisation<BedType>(*this)
+                new RanzMarshallM<BedType>(*this)
             );
         }
 
 
     //- Destructor
-    virtual ~NoDevolatilisation();
+    virtual ~RanzMarshallM();
 
 
     // Member Functions
 
-        //- Flag to indicate whether model activates devolatilisation model
-        virtual bool active() const;
+        // Evaluation
 
-        //- Update model
-        virtual void calculate
-        (
-            const scalar dt,
-            const scalar age,
-            const scalar mass0,
-            const scalar mass,
-            const scalar T,
-            label& canCombust,
-            scalar& dMass,
-            scalarField& dMassDV,
-            scalar& dMassChar
-        ) const;
+            //- Sherwood number
+            virtual scalar Sh
+            (
+                const scalar Re,
+                const scalar Sc
+            ) const;
 };
 
 
@@ -104,7 +97,7 @@ public:
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #ifdef NoRepository
-    #include "NoDevolatilisation.C"
+    #include "RanzMarshallM.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

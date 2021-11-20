@@ -37,6 +37,7 @@ SourceFiles
 
 #include "contiguous.H"
 #include "basic2DGridBed.H"
+#include "ThermoBed.H"
 #include "BioBed.H"
 #include "GravityBed.H"
 
@@ -44,7 +45,7 @@ SourceFiles
 
 namespace Foam
 {
-    typedef GravityBed<BioBed<basic2DGridBed>> basicGravityBio2DBed;
+    typedef GravityBed<BioBed<ThermoBed<basic2DGridBed>>> basicGravityBio2DBed;
 
     template<>
     inline bool contiguous<basicGravityBio2DBed>()

@@ -27,17 +27,16 @@ License
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-template<class CloudType>
-Foam::SingleKineticRateDevolatilisation<CloudType>::
+template<class BedType>
+Foam::SingleKineticRateDevolatilisation<BedType>::
 SingleKineticRateDevolatilisation
 (
     const dictionary& dict,
-    CloudType& owner
+    BedType& owner
 )
 :
-    DevolatilisationModel<CloudType>(dict, owner, typeName),
+    DevolatilisationModel<BedType>(dict, owner, typeName),
     volatileData_(this->coeffDict().lookup("volatileData")),
-    YVolatile0_(volatileData_.size()),
     volatileToGasMap_(volatileData_.size()),
     residualCoeff_(readScalar(this->coeffDict().lookup("residualCoeff")))
 {
@@ -51,19 +50,12 @@ SingleKineticRateDevolatilisation
     {
         Info<< "Participating volatile species:" << endl;
 
-        // Determine mapping between active volatiles and cloud gas components
-        const label idGas = owner.composition().idGas();
-        const scalar YGasTot = owner.composition().YMixture0()[idGas];
-        const scalarField& YGas = owner.composition().Y0(idGas);
+        // Determine mapping between active volatiles and bed gas components
         forAll(volatileData_, i)
         {
             const word& specieName = volatileData_[i].name();
-            const label id = owner.composition().localId(idGas, specieName);
+            const label id = owner.thermo().carrierId(specieName);
             volatileToGasMap_[i] = id;
-            YVolatile0_[i] = YGasTot*YGas[id];
-
-            Info<< "    " << specieName << ": particle mass fraction = "
-                << YVolatile0_[i] << endl;
         }
     }
 }
@@ -71,38 +63,32 @@ SingleKineticRateDevolatilisation
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
-template<class CloudType>
-Foam::SingleKineticRateDevolatilisation<CloudType>::
+template<class BedType>
+Foam::SingleKineticRateDevolatilisation<BedType>::
 ~SingleKineticRateDevolatilisation()
 {}
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-template<class CloudType>
-void Foam::SingleKineticRateDevolatilisation<CloudType>::calculate
+template<class BedType>
+void Foam::SingleKineticRateDevolatilisation<BedType>::calculate
 (
     const scalar dt,
     const scalar age,
     const scalar mass0,
     const scalar mass,
     const scalar T,
-    const scalarField& YGasEff,
-    const scalarField& YLiquidEff,
-    const scalarField& YSolidEff,
     label& canCombust,
-    scalarField& dMassDV
+    scalar& dMass,
+    scalarField& dMassDV,
+    scalar& dMassChar
 ) const
 {
-    bool done = true;
     forAll(volatileData_, i)
     {
         const label id = volatileToGasMap_[i];
-        const scalar massVolatile0 = mass0*YVolatile0_[i];
-        const scalar massVolatile = mass*YGasEff[id];
-
-        // Combustion allowed once all volatile components evolved
-        done = done && (massVolatile <= residualCoeff_*massVolatile0);
+        const scalar massVolatile = mass*volatileData_[i].Y();
 
         // Model coefficients
         const scalar A1 = volatileData_[i].A1();
@@ -115,7 +101,7 @@ void Foam::SingleKineticRateDevolatilisation<CloudType>::calculate
         dMassDV[id] = min(dt*kappa*massVolatile, massVolatile);
     }
 
-    if (done && canCombust != -1)
+    if (canCombust != -1)
     {
         canCombust = 1;
     }

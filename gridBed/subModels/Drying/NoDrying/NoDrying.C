@@ -23,82 +23,67 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "SurfaceReactionModel.H"
+#include "NoDrying.H"
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 template<class BedType>
-Foam::SurfaceReactionModel<BedType>::SurfaceReactionModel
+Foam::NoDrying<BedType>::NoDrying
 (
+    const dictionary&,
     BedType& owner
 )
 :
-    BedSubModelBase<BedType>(owner),
-    dMass_(0.0)
+    DryingModel<BedType>(owner)
 {}
 
 
 template<class BedType>
-Foam::SurfaceReactionModel<BedType>::SurfaceReactionModel
+Foam::NoDrying<BedType>::NoDrying
 (
-    const dictionary& dict,
-    BedType& owner,
-    const word& type
+    const NoDrying<BedType>& pcm
 )
 :
-    BedSubModelBase<BedType>(owner, dict, typeName, type),
-    dMass_(0.0)
-{}
-
-
-template<class BedType>
-Foam::SurfaceReactionModel<BedType>::SurfaceReactionModel
-(
-    const SurfaceReactionModel<BedType>& srm
-)
-:
-    BedSubModelBase<BedType>(srm),
-    dMass_(srm.dMass_)
+    DryingModel<BedType>(pcm.owner_)
 {}
 
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
 template<class BedType>
-Foam::SurfaceReactionModel<BedType>::~SurfaceReactionModel()
+Foam::NoDrying<BedType>::~NoDrying()
 {}
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 template<class BedType>
-void Foam::SurfaceReactionModel<BedType>::addToSurfaceReactionMass
-(
-    const scalar dMass
-)
+bool Foam::NoDrying<BedType>::active() const
 {
-    dMass_ += dMass;
+    return false;
 }
 
 
 template<class BedType>
-void Foam::SurfaceReactionModel<BedType>::info(Ostream& os)
+void Foam::NoDrying<BedType>::calculate
+(
+    const scalar dt,
+    const label celli,
+    const scalar Re,
+    const scalar Nu,
+    const scalar Sh,
+    const scalar d,
+    const scalar nu,
+    const scalar T,
+    const scalar Ts,
+    const scalar pc,
+    const scalar Tc,
+    const scalarField& X,
+    scalarField& dMassPC
+) const
 {
-    const scalar mass0 = this->template getBaseProperty<scalar>("mass");
-    const scalar massTotal = mass0 + returnReduce(dMass_, sumOp<scalar>());
-
-    Info<< "    Mass transfer surface reaction  = " << massTotal << nl;
-
-    if (this->writeTime())
-    {
-        this->setBaseProperty("mass", massTotal);
-        dMass_ = 0.0;
-    }
+    // Nothing to do...
 }
 
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-#include "SurfaceReactionModelNew.C"
 
 // ************************************************************************* //

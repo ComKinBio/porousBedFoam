@@ -39,7 +39,7 @@ SourceFiles
 #include "IOdictionary.H"
 #include "autoPtr.H"
 #include "runTimeSelectionTables.H"
-#include "CloudSubModelBase.H"
+#include "BedSubModelBase.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -50,10 +50,10 @@ namespace Foam
                     Class DevolatilisationModel Declaration
 \*---------------------------------------------------------------------------*/
 
-template<class CloudType>
+template<class BedType>
 class DevolatilisationModel
 :
-    public CloudSubModelBase<CloudType>
+    public BedSubModelBase<BedType>
 {
 protected:
 
@@ -76,7 +76,7 @@ public:
         dictionary,
         (
             const dictionary& dict,
-            CloudType& owner
+            BedType& owner
         ),
         (dict, owner)
     );
@@ -85,21 +85,21 @@ public:
     // Constructors
 
         //- Construct null from owner
-        DevolatilisationModel(CloudType& owner);
+        DevolatilisationModel(BedType& owner);
 
         //- Construct from dictionary
         DevolatilisationModel
         (
             const dictionary& dict,
-            CloudType& owner,
+            BedType& owner,
             const word& type
         );
 
         //- Construct copy
-        DevolatilisationModel(const DevolatilisationModel<CloudType>& dm);
+        DevolatilisationModel(const DevolatilisationModel<BedType>& dm);
 
         //- Construct and return a clone
-        virtual autoPtr<DevolatilisationModel<CloudType>> clone() const = 0;
+        virtual autoPtr<DevolatilisationModel<BedType>> clone() const = 0;
 
 
     //- Destructor
@@ -107,10 +107,10 @@ public:
 
 
     //- Selector
-    static autoPtr<DevolatilisationModel<CloudType>> New
+    static autoPtr<DevolatilisationModel<BedType>> New
     (
         const dictionary& dict,
-        CloudType& owner
+        BedType& owner
     );
 
 
@@ -124,11 +124,10 @@ public:
             const scalar mass0,
             const scalar mass,
             const scalar T,
-            const scalarField& YGasEff,
-            const scalarField& YLiquidEff,
-            const scalarField& YSolidEff,
             label& canCombust,
-            scalarField& dMassDV
+            scalar& dMass,
+            scalarField& dMassDV,
+            scalar& dMassChar
         ) const = 0;
 
         //- Add to devolatilisation mass
@@ -148,36 +147,36 @@ public:
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-#define makeDevolatilisationModel(CloudType)                                   \
+#define makeDevolatilisationModel(BedType)                                     \
                                                                                \
-    typedef Foam::CloudType::reactingMultiphaseCloudType                       \
-        reactingMultiphaseCloudType;                                           \
+    typedef Foam::BedType::bioBedType                                          \
+        bioBedType;                                                            \
     defineNamedTemplateTypeNameAndDebug                                        \
     (                                                                          \
-        Foam::DevolatilisationModel<reactingMultiphaseCloudType>,              \
+        Foam::DevolatilisationModel<bioBedType>,                               \
         0                                                                      \
     );                                                                         \
     namespace Foam                                                             \
     {                                                                          \
         defineTemplateRunTimeSelectionTable                                    \
         (                                                                      \
-            DevolatilisationModel<reactingMultiphaseCloudType>,                \
+            DevolatilisationModel<bioBedType>,                                 \
             dictionary                                                         \
         );                                                                     \
     }
 
 
-#define makeDevolatilisationModelType(SS, CloudType)                           \
+#define makeDevolatilisationModelType(SS, BedType)                             \
                                                                                \
-    typedef Foam::CloudType::reactingMultiphaseCloudType                       \
-        reactingMultiphaseCloudType;                                           \
+    typedef Foam::BedType::bioBedType                                          \
+        bioBedType;                                                            \
     defineNamedTemplateTypeNameAndDebug                                        \
-        (Foam::SS<reactingMultiphaseCloudType>, 0);                            \
+        (Foam::SS<bioBedType>, 0);                                             \
                                                                                \
-    Foam::DevolatilisationModel<reactingMultiphaseCloudType>::                 \
+    Foam::DevolatilisationModel<bioBedType>::                                  \
         adddictionaryConstructorToTable                                        \
-        <Foam::SS<reactingMultiphaseCloudType>>                                \
-        add##SS##CloudType##reactingMultiphaseCloudType##ConstructorToTable_;
+        <Foam::SS<bioBedType>>                                                 \
+        add##SS##BedType##bioBedType##ConstructorToTable_;
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

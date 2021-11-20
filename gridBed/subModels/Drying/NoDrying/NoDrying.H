@@ -22,30 +22,30 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::NoPhaseChange
+    Foam::NoDrying
 
 Description
     Dummy phase change model for 'none'
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef NoPhaseChange_H
-#define NoPhaseChange_H
+#ifndef NoDrying_H
+#define NoDrying_H
 
-#include "PhaseChangeModel.H"
+#include "DryingModel.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
 {
 /*---------------------------------------------------------------------------*\
-                       Class NoPhaseChange Declaration
+                       Class NoDrying Declaration
 \*---------------------------------------------------------------------------*/
 
-template<class CloudType>
-class NoPhaseChange
+template<class BedType>
+class NoDrying
 :
-    public PhaseChangeModel<CloudType>
+    public DryingModel<BedType>
 {
 public:
 
@@ -56,23 +56,23 @@ public:
     // Constructors
 
         //- Construct from dictionary
-        NoPhaseChange(const dictionary&, CloudType&);
+        NoDrying(const dictionary&, BedType&);
 
         //- Construct copy
-        NoPhaseChange(const NoPhaseChange<CloudType>& pcm);
+        NoDrying(const NoDrying<BedType>& pcm);
 
         //- Construct and return a clone
-        virtual autoPtr<PhaseChangeModel<CloudType>> clone() const
+        virtual autoPtr<DryingModel<BedType>> clone() const
         {
-            return autoPtr<PhaseChangeModel<CloudType>>
+            return autoPtr<DryingModel<BedType>>
             (
-                new NoPhaseChange<CloudType>(*this)
+                new NoDrying<BedType>(*this)
             );
         }
 
 
     //- Destructor
-    virtual ~NoPhaseChange();
+    virtual ~NoDrying();
 
 
     // Member Functions
@@ -86,7 +86,8 @@ public:
             const scalar dt,
             const label celli,
             const scalar Re,
-            const scalar Pr,
+            const scalar Nu,
+            const scalar Sh,
             const scalar d,
             const scalar nu,
             const scalar T,
@@ -106,7 +107,7 @@ public:
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #ifdef NoRepository
-    #include "NoPhaseChange.C"
+    #include "NoDrying.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

@@ -23,69 +23,25 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "NoSurfaceReaction.H"
+#ifndef makeBioParcelDryingModels_H
+#define makeBioParcelDryingModels_H
 
-// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-template<class BedType>
-Foam::NoSurfaceReaction<BedType>::NoSurfaceReaction
-(
-    const dictionary&,
-    BedType& owner
-)
-:
-    SurfaceReactionModel<BedType>(owner)
-{}
+#include "NoDrying.H"
+#include "LiquidEvaporation.H"
 
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-template<class BedType>
-Foam::NoSurfaceReaction<BedType>::NoSurfaceReaction
-(
-    const NoSurfaceReaction<BedType>& srm
-)
-:
-    SurfaceReactionModel<BedType>(srm.owner_)
-{}
+#define makeBioParcelDryingModels(CloudType)                                 \
+                                                                             \
+    makeDryingModel(CloudType);                                              \
+    makeDryingModelType(NoDrying, CloudType);                                \
+    makeDryingModelType(LiquidEvaporation, CloudType);                    
 
 
-// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-template<class BedType>
-Foam::NoSurfaceReaction<BedType>::~NoSurfaceReaction()
-{}
-
-
-// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
-
-template<class BedType>
-bool Foam::NoSurfaceReaction<BedType>::active() const
-{
-    return false;
-}
-
-
-template<class BedType>
-Foam::scalar Foam::NoSurfaceReaction<BedType>::calculate
-(
-    const scalar,
-    const label,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    scalar&,
-    scalarField&
-) const
-{
-    return 0;
-}
-
+#endif
 
 // ************************************************************************* //

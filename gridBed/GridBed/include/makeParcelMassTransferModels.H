@@ -23,69 +23,26 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "NoSurfaceReaction.H"
+#ifndef makeParcelMassTransferModels_H
+#define makeParcelMassTransferModels_H
 
-// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-template<class BedType>
-Foam::NoSurfaceReaction<BedType>::NoSurfaceReaction
-(
-    const dictionary&,
-    BedType& owner
-)
-:
-    SurfaceReactionModel<BedType>(owner)
-{}
+#include "NoMassTransfer.H"
+#include "RanzMarshallM.H"
 
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-template<class BedType>
-Foam::NoSurfaceReaction<BedType>::NoSurfaceReaction
-(
-    const NoSurfaceReaction<BedType>& srm
-)
-:
-    SurfaceReactionModel<BedType>(srm.owner_)
-{}
+#define makeParcelMassTransferModels(BedType)                                \
+                                                                               \
+    makeMassTransferModel(BedType);                                          \
+                                                                               \
+    makeMassTransferModelType(NoMassTransfer, BedType);                      \
+    makeMassTransferModelType(RanzMarshallM, BedType);
 
 
-// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-template<class BedType>
-Foam::NoSurfaceReaction<BedType>::~NoSurfaceReaction()
-{}
-
-
-// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
-
-template<class BedType>
-bool Foam::NoSurfaceReaction<BedType>::active() const
-{
-    return false;
-}
-
-
-template<class BedType>
-Foam::scalar Foam::NoSurfaceReaction<BedType>::calculate
-(
-    const scalar,
-    const label,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    scalar&,
-    scalarField&
-) const
-{
-    return 0;
-}
-
+#endif
 
 // ************************************************************************* //

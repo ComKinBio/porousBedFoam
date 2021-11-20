@@ -33,7 +33,7 @@ Description
 #ifndef LiquidEvaporation_H
 #define LiquidEvaporation_H
 
-#include "PhaseChangeModel.H"
+#include "DryingModel.H"
 #include "liquidMixtureProperties.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -44,10 +44,10 @@ namespace Foam
                      Class LiquidEvaporation Declaration
 \*---------------------------------------------------------------------------*/
 
-template<class CloudType>
+template<class BedType>
 class LiquidEvaporation
 :
-    public PhaseChangeModel<CloudType>
+    public DryingModel<BedType>
 {
 protected:
 
@@ -68,9 +68,6 @@ protected:
 
     // Protected Member Functions
 
-        //- Sherwood number as a function of Reynolds and Schmidt numbers
-        scalar Sh(const scalar Re, const scalar Sc) const;
-
         //- Calculate the carrier phase component volume fractions at celli
         tmp<scalarField> calcXc(const label celli) const;
 
@@ -84,17 +81,17 @@ public:
     // Constructors
 
         //- Construct from dictionary
-        LiquidEvaporation(const dictionary& dict, CloudType& cloud);
+        LiquidEvaporation(const dictionary& dict, BedType& bed);
 
         //- Construct copy
-        LiquidEvaporation(const LiquidEvaporation<CloudType>& pcm);
+        LiquidEvaporation(const LiquidEvaporation<BedType>& pcm);
 
         //- Construct and return a clone
-        virtual autoPtr<PhaseChangeModel<CloudType>> clone() const
+        virtual autoPtr<DryingModel<BedType>> clone() const
         {
-            return autoPtr<PhaseChangeModel<CloudType>>
+            return autoPtr<DryingModel<BedType>>
             (
-                new LiquidEvaporation<CloudType>(*this)
+                new LiquidEvaporation<BedType>(*this)
             );
         }
 
@@ -111,7 +108,8 @@ public:
             const scalar dt,
             const label celli,
             const scalar Re,
-            const scalar Pr,
+            const scalar Nu,
+            const scalar Sh,
             const scalar d,
             const scalar nu,
             const scalar T,

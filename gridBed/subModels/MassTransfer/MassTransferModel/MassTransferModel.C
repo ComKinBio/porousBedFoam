@@ -23,82 +23,67 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "SurfaceReactionModel.H"
+#include "MassTransferModel.H"
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 template<class BedType>
-Foam::SurfaceReactionModel<BedType>::SurfaceReactionModel
-(
-    BedType& owner
-)
+Foam::MassTransferModel<BedType>::MassTransferModel(BedType& owner)
 :
-    BedSubModelBase<BedType>(owner),
-    dMass_(0.0)
+    BedSubModelBase<BedType>(owner)
 {}
 
 
 template<class BedType>
-Foam::SurfaceReactionModel<BedType>::SurfaceReactionModel
+Foam::MassTransferModel<BedType>::MassTransferModel
 (
     const dictionary& dict,
     BedType& owner,
     const word& type
 )
 :
-    BedSubModelBase<BedType>(owner, dict, typeName, type),
-    dMass_(0.0)
+    BedSubModelBase<BedType>(owner, dict, typeName, type)
 {}
 
 
 template<class BedType>
-Foam::SurfaceReactionModel<BedType>::SurfaceReactionModel
+Foam::MassTransferModel<BedType>::MassTransferModel
 (
-    const SurfaceReactionModel<BedType>& srm
+    const MassTransferModel<BedType>& htm
 )
 :
-    BedSubModelBase<BedType>(srm),
-    dMass_(srm.dMass_)
+    BedSubModelBase<BedType>(htm)
 {}
 
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
 template<class BedType>
-Foam::SurfaceReactionModel<BedType>::~SurfaceReactionModel()
+Foam::MassTransferModel<BedType>::~MassTransferModel()
 {}
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 template<class BedType>
-void Foam::SurfaceReactionModel<BedType>::addToSurfaceReactionMass
+Foam::scalar Foam::MassTransferModel<BedType>::mtc
 (
-    const scalar dMass
-)
+    const scalar dp,
+    const scalar Re,
+    const scalar Sc,
+    const scalar D
+) const
 {
-    dMass_ += dMass;
-}
+    const scalar Sh = this->Sh(Re, Sc);
 
+    scalar mtc = Sh*D/dp;
 
-template<class BedType>
-void Foam::SurfaceReactionModel<BedType>::info(Ostream& os)
-{
-    const scalar mass0 = this->template getBaseProperty<scalar>("mass");
-    const scalar massTotal = mass0 + returnReduce(dMass_, sumOp<scalar>());
-
-    Info<< "    Mass transfer surface reaction  = " << massTotal << nl;
-
-    if (this->writeTime())
-    {
-        this->setBaseProperty("mass", massTotal);
-        dMass_ = 0.0;
-    }
+    return mtc;
 }
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-#include "SurfaceReactionModelNew.C"
+#include "MassTransferModelNew.C"
 
 // ************************************************************************* //

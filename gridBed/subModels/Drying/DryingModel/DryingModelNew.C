@@ -23,68 +23,36 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "NoSurfaceReaction.H"
+#include "DryingModel.H"
 
-// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 template<class BedType>
-Foam::NoSurfaceReaction<BedType>::NoSurfaceReaction
+Foam::autoPtr<Foam::DryingModel<BedType>>
+Foam::DryingModel<BedType>::New
 (
-    const dictionary&,
+    const dictionary& dict,
     BedType& owner
 )
-:
-    SurfaceReactionModel<BedType>(owner)
-{}
-
-
-template<class BedType>
-Foam::NoSurfaceReaction<BedType>::NoSurfaceReaction
-(
-    const NoSurfaceReaction<BedType>& srm
-)
-:
-    SurfaceReactionModel<BedType>(srm.owner_)
-{}
-
-
-// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
-
-template<class BedType>
-Foam::NoSurfaceReaction<BedType>::~NoSurfaceReaction()
-{}
-
-
-// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
-
-template<class BedType>
-bool Foam::NoSurfaceReaction<BedType>::active() const
 {
-    return false;
-}
+    const word modelType(dict.lookup("dryingModel"));
 
+    Info<< "Selecting phase change model " << modelType << endl;
 
-template<class BedType>
-Foam::scalar Foam::NoSurfaceReaction<BedType>::calculate
-(
-    const scalar,
-    const label,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    scalar&,
-    scalarField&
-) const
-{
-    return 0;
+    typename dictionaryConstructorTable::iterator cstrIter =
+        dictionaryConstructorTablePtr_->find(modelType);
+
+    if (cstrIter == dictionaryConstructorTablePtr_->end())
+    {
+        FatalErrorInFunction
+            << "Unknown phase change model type "
+            << modelType << nl << nl
+            << "Valid phase change model types are:" << nl
+            << dictionaryConstructorTablePtr_->sortedToc()
+            << exit(FatalError);
+    }
+
+    return autoPtr<DryingModel<BedType>>(cstrIter()(dict, owner));
 }
 
 

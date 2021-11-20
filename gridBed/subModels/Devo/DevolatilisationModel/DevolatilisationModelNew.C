@@ -27,12 +27,12 @@ License
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-template<class CloudType>
-Foam::autoPtr<Foam::DevolatilisationModel<CloudType>>
-Foam::DevolatilisationModel<CloudType>::New
+template<class BedType>
+Foam::autoPtr<Foam::DevolatilisationModel<BedType>>
+Foam::DevolatilisationModel<BedType>::New
 (
     const dictionary& dict,
-    CloudType& owner
+    BedType& owner
 )
 {
     const word modelType(dict.lookup("devolatilisationModel"));
@@ -52,7 +52,7 @@ Foam::DevolatilisationModel<CloudType>::New
             << exit(FatalError);
     }
 
-    return autoPtr<DevolatilisationModel<CloudType>>(cstrIter()(dict, owner));
+    return autoPtr<DevolatilisationModel<BedType>>(cstrIter()(dict, owner));
 }
 
 

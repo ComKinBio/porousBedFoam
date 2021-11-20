@@ -23,69 +23,31 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "NoSurfaceReaction.H"
+#ifndef makeBioParcelDevolatilisationModels_H
+#define makeBioParcelDevolatilisationModels_H
 
-// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-template<class BedType>
-Foam::NoSurfaceReaction<BedType>::NoSurfaceReaction
-(
-    const dictionary&,
-    BedType& owner
-)
-:
-    SurfaceReactionModel<BedType>(owner)
-{}
+#include "NoDevolatilisation.H"
+#include "SingleKineticRateDevolatilisation.H"
+#include "DiBlasiDevolatilisation.H"
 
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-template<class BedType>
-Foam::NoSurfaceReaction<BedType>::NoSurfaceReaction
-(
-    const NoSurfaceReaction<BedType>& srm
-)
-:
-    SurfaceReactionModel<BedType>(srm.owner_)
-{}
+#define makeBioParcelDevolatilisationModels(BedType)                           \
+                                                                               \
+    makeDevolatilisationModel(BedType);                                        \
+    makeDevolatilisationModelType(DiBlasiDevolatilisation, BedType);           \
+    makeDevolatilisationModelType(NoDevolatilisation, BedType);                \
+    makeDevolatilisationModelType                                              \
+    (                                                                          \
+        SingleKineticRateDevolatilisation,                                     \
+        BedType                                                                \
+    );
 
 
-// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-template<class BedType>
-Foam::NoSurfaceReaction<BedType>::~NoSurfaceReaction()
-{}
-
-
-// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
-
-template<class BedType>
-bool Foam::NoSurfaceReaction<BedType>::active() const
-{
-    return false;
-}
-
-
-template<class BedType>
-Foam::scalar Foam::NoSurfaceReaction<BedType>::calculate
-(
-    const scalar,
-    const label,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    const scalar,
-    scalar&,
-    scalarField&
-) const
-{
-    return 0;
-}
-
+#endif
 
 // ************************************************************************* //

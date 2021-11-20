@@ -32,11 +32,14 @@ Description
 #include "turbulentFluidThermoModel.H"
 #include "basic2DGridBed.H"
 #include "basicGravity2DBed.H"
+// #include "basicBio2DBed.H"
 #include "ParticleForce.H"
 #include "psiReactionThermo.H"
 #include "CombustionModel.H"
 #include "fvOptions.H"
 #include "SLGThermo.H"
+#include "Random.H"
+
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 int main(int argc, char *argv[])
@@ -137,51 +140,90 @@ int main(int argc, char *argv[])
         dimensionedScalar("mu",dimDensity, 0.00001)
     );
         
-        
-//     basic2DGridBed testBed
+    
+    const liquidMixtureProperties& liquids =  slgThermo.liquids();
+    
+    const scalar Dab = liquids.properties()[0].D(100000, 298);
+    
+    Info<<"Dab: "<<Dab<<nl<<endl;
+    
+    Info<<"slgThermo.liqidId(H2O): "<<slgThermo.liquidId("H2O")<<nl<<endl;
+    
+    Info<<"slgThermo.liquids().size(): "<<slgThermo.liquids().size()<<nl<<endl;
+    
+     Info<<"slgThermo.liquids().components(): "<<slgThermo.liquids().components()<<nl<<endl;
+    
+    Info<<"slgThermo.carrier().species().size(): "<<slgThermo.carrier().species().size()<<nl<<endl;
+    
+    Info<<"slgThermo.carrierId(H2O): "<<slgThermo.carrierId("H2O")<<nl<<endl;
+    
+    Info<<"slgThermo.carrierId(slgThermo.liquids().components()[0]): "<<slgThermo.carrierId(slgThermo.liquids().components()[0])<<nl<<endl;
+    
+    const label seed = 233;
+    Random rndGen(12);
+    
+    Info<<" rndGen.sample01<scalar>(): "<< rndGen.sample01<scalar>()<<nl<<endl;
+    Info<<" rndGen.sample01<scalar>(): "<< rndGen.sample01<scalar>()<<nl<<endl;
+    Info<<" rndGen.sample01<scalar>(): "<< rndGen.sample01<scalar>()<<nl<<endl;
+    Info<<" rndGen.sample01<scalar>(): "<< rndGen.sample01<scalar>()<<nl<<endl;
+    Info<<" rndGen.sample01<scalar>(): "<< rndGen.sample01<scalar>()<<nl<<endl;
+    
+    
+    
+    Info<<" rndGen.sampleAB(1,23): "<< rndGen.sampleAB(1,23)<<nl<<endl;
+    Info<<" rndGen.sampleAB(1,23): "<< rndGen.sampleAB(1,23)<<nl<<endl;
+    Info<<" rndGen.sampleAB(1,23): "<< rndGen.sampleAB(1,23)<<nl<<endl;
+    Info<<" rndGen.sampleAB(1,23): "<< rndGen.sampleAB(1,23)<<nl<<endl;
+    Info<<" rndGen.sampleAB(1,23): "<< rndGen.sampleAB(1,23)<<nl<<endl;
+    
+    
+    
+   
+    
+
+//     basicBio2DBed testBed
 //     (
 //         "bed2d",
 //         mesh,
 //         rho,
 //         Uc,
-//         mu,
 //         g,
 //         slgThermo
 //     );
     
-    basicGravity2DBed testBed
-    (
-        "bed2d",
-        mesh,
-        rho,
-        Uc,
-        g,
-        slgThermo
-    );
-    
-    const scalar dt = 0.0001;
-    
-    volScalarField& alphaBed = testBed.alpha();
-    
-    Info<<"alphaBed field: "<<alphaBed<<nl<<endl;
-    
-    Info<<"bed number field: "<<testBed.particleNumber()<<nl<<endl;
-    
-    testBed.gravityCollapse();
-    
-    Info<<"gravityCollapse: "<<nl<<endl;
-    
-    Info<<"alphaBed field: "<<alphaBed<<nl<<endl;
-    
-    Info<<"bed number field: "<<testBed.particleNumber()<<nl<<endl;
-    
-    testBed.solve(dt);
-    
-    fvVectorMatrix SU = testBed.SU(Uc,dt);
-    
-
-    Info<< "End\n" << endl;
-    Info<< "SU" << SU << nl << endl;
+//     basicGravity2DBed testBed
+//     (
+//         "bed2d",
+//         mesh,
+//         rho,
+//         Uc,
+//         g,
+//         slgThermo
+//     );
+//     
+//     const scalar dt = 0.0001;
+//     
+//     volScalarField& alphaBed = testBed.alpha();
+//     
+//     Info<<"alphaBed field: "<<alphaBed<<nl<<endl;
+//     
+//     Info<<"bed number field: "<<testBed.particleNumber()<<nl<<endl;
+//     
+//     testBed.gravityCollapse();
+//     
+//     Info<<"gravityCollapse: "<<nl<<endl;
+//     
+//     Info<<"alphaBed field: "<<alphaBed<<nl<<endl;
+//     
+//     Info<<"bed number field: "<<testBed.particleNumber()<<nl<<endl;
+//     
+//     testBed.solve(dt);
+//     
+//     fvVectorMatrix SU = testBed.SU(Uc,dt);
+//     
+// 
+//     Info<< "End\n" << endl;
+//     Info<< "SU" << SU << nl << endl;
 
     return 0;
 }

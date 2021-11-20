@@ -22,24 +22,24 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::PhaseChangeModel
+    Foam::DryingModel
 
 Description
     Templated phase change model class
 
 SourceFiles
-    PhaseChangeModel.C
-    PhaseChangeModelNew.C
+    DryingModel.C
+    DryingModelNew.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef PhaseChangeModel_H
-#define PhaseChangeModel_H
+#ifndef DryingModel_H
+#define DryingModel_H
 
 #include "IOdictionary.H"
 #include "autoPtr.H"
 #include "runTimeSelectionTables.H"
-#include "CloudSubModelBase.H"
+#include "BedSubModelBase.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -47,13 +47,13 @@ namespace Foam
 {
 
 /*---------------------------------------------------------------------------*\
-                      Class PhaseChangeModel Declaration
+                      Class DryingModel Declaration
 \*---------------------------------------------------------------------------*/
 
-template<class CloudType>
-class PhaseChangeModel
+template<class BedType>
+class DryingModel
 :
-    public CloudSubModelBase<CloudType>
+    public BedSubModelBase<BedType>
 {
 public:
 
@@ -89,24 +89,20 @@ protected:
         //- Convert word to enthalpy transfer type
         enthalpyTransferType wordToEnthalpyTransfer(const word& etName) const;
 
-        //- Sherwood number
-        scalar Sh() const;
-
-
 public:
 
     //- Runtime type information
-    TypeName("phaseChangeModel");
+    TypeName("dryingModel");
 
     //- Declare runtime constructor selection table
     declareRunTimeSelectionTable
     (
         autoPtr,
-        PhaseChangeModel,
+        DryingModel,
         dictionary,
         (
             const dictionary& dict,
-            CloudType& owner
+            BedType& owner
         ),
         (dict, owner)
     );
@@ -115,32 +111,32 @@ public:
     // Constructors
 
         //- Construct null from owner
-        PhaseChangeModel(CloudType& owner);
+        DryingModel(BedType& owner);
 
         //- Construct from dictionary
-        PhaseChangeModel
+        DryingModel
         (
             const dictionary& dict,
-            CloudType& owner,
+            BedType& owner,
             const word& type
         );
 
         //- Construct copy
-        PhaseChangeModel(const PhaseChangeModel<CloudType>& pcm);
+        DryingModel(const DryingModel<BedType>& pcm);
 
         //- Construct and return a clone
-        virtual autoPtr<PhaseChangeModel<CloudType>> clone() const = 0;
+        virtual autoPtr<DryingModel<BedType>> clone() const = 0;
 
 
     //- Destructor
-    virtual ~PhaseChangeModel();
+    virtual ~DryingModel();
 
 
     //- Selector
-    static autoPtr<PhaseChangeModel<CloudType>> New
+    static autoPtr<DryingModel<BedType>> New
     (
         const dictionary& dict,
-        CloudType& owner
+        BedType& owner
     );
 
 
@@ -158,7 +154,8 @@ public:
             const scalar dt,
             const label celli,
             const scalar Re,
-            const scalar Pr,
+            const scalar Nu,
+            const scalar Sh,
             const scalar d,
             const scalar nu,
             const scalar T,
@@ -185,7 +182,7 @@ public:
         virtual scalar TMax(const scalar p, const scalarField& X) const;
 
         //- Add to phase change mass
-        void addToPhaseChangeMass(const scalar dMass);
+        void addToDryingMass(const scalar dMass);
 
 
         // I-O
@@ -201,38 +198,38 @@ public:
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-#define makePhaseChangeModel(CloudType)                                        \
+#define makeDryingModel(BedType)                                               \
                                                                                \
-    typedef Foam::CloudType::reactingCloudType reactingCloudType;              \
+    typedef Foam::BedType::bioBedType bioBedType;                              \
     defineNamedTemplateTypeNameAndDebug                                        \
     (                                                                          \
-        Foam::PhaseChangeModel<reactingCloudType>,                             \
+        Foam::DryingModel<bioBedType>,                                         \
         0                                                                      \
     );                                                                         \
     namespace Foam                                                             \
     {                                                                          \
         defineTemplateRunTimeSelectionTable                                    \
         (                                                                      \
-            PhaseChangeModel<reactingCloudType>,                               \
+            DryingModel<bioBedType>,                                           \
             dictionary                                                         \
         );                                                                     \
     }
 
 
-#define makePhaseChangeModelType(SS, CloudType)                                \
+#define makeDryingModelType(SS, BedType)                                       \
                                                                                \
-    typedef Foam::CloudType::reactingCloudType reactingCloudType;              \
-    defineNamedTemplateTypeNameAndDebug(Foam::SS<reactingCloudType>, 0);       \
+    typedef Foam::BedType::bioBedType bioBedType;                              \
+    defineNamedTemplateTypeNameAndDebug(Foam::SS<bioBedType>, 0);              \
                                                                                \
-    Foam::PhaseChangeModel<reactingCloudType>::                                \
-        adddictionaryConstructorToTable<Foam::SS<reactingCloudType>>           \
-            add##SS##CloudType##reactingCloudType##ConstructorToTable_;
+    Foam::DryingModel<bioBedType>::                                            \
+        adddictionaryConstructorToTable<Foam::SS<bioBedType>>                  \
+            add##SS##BedType##bioBedType##ConstructorToTable_;
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #ifdef NoRepository
-    #include "PhaseChangeModel.C"
+    #include "DryingModel.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

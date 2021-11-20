@@ -174,7 +174,7 @@ inline Foam::ThermoBed<BedType>::ThermoBed
         this->mesh(),
         dimensionedScalar(dimPower/dimLength/dimTemperature, kp0())
     ),
-//     heatTransferModel_(nullptr)
+    heatTransferModel_(nullptr),
     TIntegrator_(nullptr),
     heatExplicit_(true),
     radiation_(false),
@@ -393,7 +393,6 @@ void Foam::ThermoBed<BedType>::solveHeat(const scalar dt)
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         const label celli = bedList[i];
         const scalar np0 = this->particleNumber_[celli];
-        const scalar mass0 = this->mass(celli);
 
         // Store T for consistent radiation source
         const scalar T0 = bedT_[celli];

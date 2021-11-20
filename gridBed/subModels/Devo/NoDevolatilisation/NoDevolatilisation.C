@@ -27,56 +27,55 @@ License
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-template<class CloudType>
-Foam::NoDevolatilisation<CloudType>::NoDevolatilisation
+template<class BedType>
+Foam::NoDevolatilisation<BedType>::NoDevolatilisation
 (
     const dictionary&,
-    CloudType& owner
+    BedType& owner
 )
 :
-    DevolatilisationModel<CloudType>(owner)
+    DevolatilisationModel<BedType>(owner)
 {}
 
 
-template<class CloudType>
-Foam::NoDevolatilisation<CloudType>::NoDevolatilisation
+template<class BedType>
+Foam::NoDevolatilisation<BedType>::NoDevolatilisation
 (
-    const NoDevolatilisation<CloudType>& dm
+    const NoDevolatilisation<BedType>& dm
 )
 :
-    DevolatilisationModel<CloudType>(dm.owner_)
+    DevolatilisationModel<BedType>(dm.owner_)
 {}
 
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
-template<class CloudType>
-Foam::NoDevolatilisation<CloudType>::~NoDevolatilisation()
+template<class BedType>
+Foam::NoDevolatilisation<BedType>::~NoDevolatilisation()
 {}
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-template<class CloudType>
-bool Foam::NoDevolatilisation<CloudType>::active() const
+template<class BedType>
+bool Foam::NoDevolatilisation<BedType>::active() const
 {
     return false;
 }
 
 
-template<class CloudType>
-void Foam::NoDevolatilisation<CloudType>::calculate
+template<class BedType>
+void Foam::NoDevolatilisation<BedType>::calculate
 (
     const scalar,
     const scalar,
     const scalar,
     const scalar,
     const scalar,
-    const scalarField&,
-    const scalarField&,
-    const scalarField&,
     label& canCombust,
-    scalarField&
+    scalar&,
+    scalarField&,
+    scalar&
 ) const
 {
     // Model does not stop combustion taking place

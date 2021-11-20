@@ -25,6 +25,9 @@ License
 
 #include "bioBedFields.H"
 #include "meshTools.H"
+#include "mathematicalConstants.H"
+
+using namespace Foam::constant::mathematical;
 
 // * * * * * * * * * * * * * *  Static Member  * * * * * * * * * * * * * * //
 namespace Foam
@@ -70,7 +73,11 @@ Foam::bioBedFields::bioBedFields
 :
     mesh_(mesh),
     bioProperties_(bioProperties_),
+    moisture_(bioProperties_, "moisture"),
+    ashContent_(bioProperties_, "ashContent"),
+    ashFixedPorosity_(bioProperties_, "ashFixedPorosity"),
     rhopPtrList_(4),
+    dp0PtrList_(4),
     T0PtrList_(4),
     Cp0PtrList_(4),
     kp0PtrList_(4),
@@ -79,6 +86,7 @@ Foam::bioBedFields::bioBedFields
     particleNumberPtrList_(4),
     dpPtrList_(4),
     dp2ndPtrList_(4),
+    massPtrList_(4),
     bedTPtrList_(4),
     bedCpPtrList_(4),
     bedKpPtrList_(4),
@@ -95,6 +103,16 @@ Foam::bioBedFields::bioBedFields
             (
                 bioProperties_,
                 rhopname
+            )
+        );
+        
+        word dp0name = name + "_dp0";
+        dp0PtrList_[e].reset
+        (
+            new demandDrivenEntry<scalar>
+            (
+                bioProperties_,
+                dp0name
             )
         );
         
@@ -186,7 +204,7 @@ Foam::bioBedFields::bioBedFields
                     IOobject::AUTO_WRITE
                 ),
                 mesh_,
-                dimensionedScalar(dimLength, 0)
+                dimensionedScalar(dimLength, dp0e(e))
             )
         );
         
@@ -207,6 +225,28 @@ Foam::bioBedFields::bioBedFields
                 dimensionedScalar(dimLength, 0)
             )
         );
+        
+        word dpname = "mass_" + name;
+        massPtrList_[e].reset
+        (
+            new volScalarField
+            (
+                IOobject
+                (
+                    IOobject::groupName(bedName, dpname),
+                    mesh_.time().timeName(),
+                    mesh_,
+                    IOobject::READ_IF_PRESENT,
+                    IOobject::AUTO_WRITE
+                ),
+                mesh_,
+                dimensionedScalar
+                (   dimMass, 
+                    rhope(e)*particleNumbere(e)*pi/6.0*pow3(dpe(e))
+                ) 
+            )
+        );
+        
         
         word bedTname = "bedT_" + name;
         bedTPtrList_[e].reset
@@ -240,7 +280,11 @@ Foam::bioBedFields::bioBedFields
                     IOobject::AUTO_WRITE
                 ),
                 mesh_,
-                dimensionedScalar(dimEnergy/dimMass/dimTemperature, Cp0e(e))
+                dimensionedScalar
+                (
+                    dimEnergy/dimMass/dimTemperature, 
+                    Cp0e(e)
+                )
             )
         );
         
@@ -258,7 +302,10 @@ Foam::bioBedFields::bioBedFields
                     IOobject::AUTO_WRITE
                 ),
                 mesh_,
-                dimensionedScalar(dimPower/dimLength/dimTemperature, kp0e(e))
+                dimensionedScalar
+                (   dimPower/dimLength/dimTemperature, 
+                    bedKpe(e)
+                )
             )
         );
         
@@ -280,6 +327,9 @@ Foam::bioBedFields::bioBedFields
             )
         );
     }
+    
+    ash_porosity() = dimensionedScalar(dimless, ashFixedPorosity_.value());
+    dpe(ash_) = dpe(ash_)/cbrt(ash_porosity());
 }
 
 

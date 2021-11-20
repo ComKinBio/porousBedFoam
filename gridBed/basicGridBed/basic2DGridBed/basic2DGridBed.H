@@ -46,6 +46,7 @@ SourceFiles
 #include "demandDrivenEntry.H"
 #include "typeInfo.H"
 #include "ParticleForce.H"
+#include "Random.H"
 
 #include "SLGThermo.H"
 
@@ -101,6 +102,10 @@ protected:
         //- Sub-models dictionary
         const dictionary subModelProperties_;
         
+    
+    //- Random number generator - used by some injection routines
+    mutable Random rndGen_;
+        
         
     // References to the carrier gas fields
         
@@ -138,7 +143,10 @@ protected:
         const scalar alphaMin_;
         
         //- bed material density [kg/m^3]
-        demandDrivenEntry<scalar> rhop_;   
+        demandDrivenEntry<scalar> rhop_; 
+        
+        //- particle sphericity
+        demandDrivenEntry<scalar> sphericity_;   
         
         
     // bed properties fields
@@ -290,6 +298,11 @@ public:
 
                     //- Return reference to the sub-models dictionary
                 inline const dictionary& subModelProperties() const;
+                
+            
+                
+            //- Return reference to the random object
+            inline Random& rndGen() const;
         
                 
             // References to the carrier gas fields
@@ -312,6 +325,9 @@ public:
                 
                 //- bed material density [kg/m^3]
                 inline scalar rhop() const;
+                
+                //- particle sphericity
+                inline scalar sphericity() const;
 
             
             // Environmental properties

@@ -23,12 +23,12 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "PhaseChangeModel.H"
+#include "DryingModel.H"
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
-template<class CloudType>
-const Foam::wordList Foam::PhaseChangeModel<CloudType>::
+template<class BedType>
+const Foam::wordList Foam::DryingModel<BedType>::
 enthalpyTransferTypeNames
 (
     IStringStream
@@ -43,9 +43,9 @@ enthalpyTransferTypeNames
 
 // * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * * //
 
-template<class CloudType>
-typename Foam::PhaseChangeModel<CloudType>::enthalpyTransferType
-Foam::PhaseChangeModel<CloudType>::wordToEnthalpyTransfer(const word& etName)
+template<class BedType>
+typename Foam::DryingModel<BedType>::enthalpyTransferType
+Foam::DryingModel<BedType>::wordToEnthalpyTransfer(const word& etName)
 const
 {
     forAll(enthalpyTransferTypeNames, i)
@@ -66,39 +66,39 @@ const
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-template<class CloudType>
-Foam::PhaseChangeModel<CloudType>::PhaseChangeModel
+template<class BedType>
+Foam::DryingModel<BedType>::DryingModel
 (
-    CloudType& owner
+    BedType& owner
 )
 :
-    CloudSubModelBase<CloudType>(owner),
+    BedSubModelBase<BedType>(owner),
     enthalpyTransfer_(etLatentHeat),
     dMass_(0.0)
 {}
 
 
-template<class CloudType>
-Foam::PhaseChangeModel<CloudType>::PhaseChangeModel
+template<class BedType>
+Foam::DryingModel<BedType>::DryingModel
 (
-    const PhaseChangeModel<CloudType>& pcm
+    const DryingModel<BedType>& pcm
 )
 :
-    CloudSubModelBase<CloudType>(pcm),
+    BedSubModelBase<BedType>(pcm),
     enthalpyTransfer_(pcm.enthalpyTransfer_),
     dMass_(pcm.dMass_)
 {}
 
 
-template<class CloudType>
-Foam::PhaseChangeModel<CloudType>::PhaseChangeModel
+template<class BedType>
+Foam::DryingModel<BedType>::DryingModel
 (
     const dictionary& dict,
-    CloudType& owner,
+    BedType& owner,
     const word& type
 )
 :
-    CloudSubModelBase<CloudType>(owner, dict, typeName, type),
+    BedSubModelBase<BedType>(owner, dict, typeName, type),
     enthalpyTransfer_
     (
         wordToEnthalpyTransfer(this->coeffDict().lookup("enthalpyTransfer"))
@@ -109,23 +109,23 @@ Foam::PhaseChangeModel<CloudType>::PhaseChangeModel
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
-template<class CloudType>
-Foam::PhaseChangeModel<CloudType>::~PhaseChangeModel()
+template<class BedType>
+Foam::DryingModel<BedType>::~DryingModel()
 {}
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-template<class CloudType>
-const typename Foam::PhaseChangeModel<CloudType>::enthalpyTransferType&
-Foam::PhaseChangeModel<CloudType>::enthalpyTransfer() const
+template<class BedType>
+const typename Foam::DryingModel<BedType>::enthalpyTransferType&
+Foam::DryingModel<BedType>::enthalpyTransfer() const
 {
     return enthalpyTransfer_;
 }
 
 
-template<class CloudType>
-Foam::scalar Foam::PhaseChangeModel<CloudType>::dh
+template<class BedType>
+Foam::scalar Foam::DryingModel<BedType>::dh
 (
     const label idc,
     const label idl,
@@ -137,8 +137,8 @@ Foam::scalar Foam::PhaseChangeModel<CloudType>::dh
 }
 
 
-template<class CloudType>
-Foam::scalar Foam::PhaseChangeModel<CloudType>::TMax
+template<class BedType>
+Foam::scalar Foam::DryingModel<BedType>::TMax
 (
     const scalar p,
     const scalarField& X
@@ -148,22 +148,22 @@ Foam::scalar Foam::PhaseChangeModel<CloudType>::TMax
 }
 
 
-template<class CloudType>
-Foam::scalar Foam::PhaseChangeModel<CloudType>::Tvap(const scalarField& X) const
+template<class BedType>
+Foam::scalar Foam::DryingModel<BedType>::Tvap(const scalarField& X) const
 {
     return -great;
 }
 
 
-template<class CloudType>
-void Foam::PhaseChangeModel<CloudType>::addToPhaseChangeMass(const scalar dMass)
+template<class BedType>
+void Foam::DryingModel<BedType>::addToDryingMass(const scalar dMass)
 {
     dMass_ += dMass;
 }
 
 
-template<class CloudType>
-void Foam::PhaseChangeModel<CloudType>::info(Ostream& os)
+template<class BedType>
+void Foam::DryingModel<BedType>::info(Ostream& os)
 {
     const scalar mass0 = this->template getBaseProperty<scalar>("mass");
     const scalar massTotal = mass0 + returnReduce(dMass_, sumOp<scalar>());
@@ -180,6 +180,6 @@ void Foam::PhaseChangeModel<CloudType>::info(Ostream& os)
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-#include "PhaseChangeModelNew.C"
+#include "DryingModelNew.C"
 
 // ************************************************************************* //

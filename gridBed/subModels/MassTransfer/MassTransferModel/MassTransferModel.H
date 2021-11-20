@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2011-2019 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -22,25 +22,24 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::SurfaceReactionModel
+    Foam::MassTransferModel
 
 Description
-    Templated surface reaction model class
+    Templated heat transfer model class
 
 SourceFiles
-    SurfaceReactionModel.C
-    SurfaceReactionModelNew.C
+    MassTransferModel.C
+    MassTransferModelNew.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef SurfaceReactionModel_H
-#define SurfaceReactionModel_H
+#ifndef MassTransferModel_H
+#define MassTransferModel_H
 
 #include "IOdictionary.H"
 #include "autoPtr.H"
 #include "runTimeSelectionTables.H"
 #include "BedSubModelBase.H"
-#include "scalarField.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -48,105 +47,85 @@ namespace Foam
 {
 
 /*---------------------------------------------------------------------------*\
-                     Class SurfaceReactionModel Declaration
+                       Class MassTransferModel Declaration
 \*---------------------------------------------------------------------------*/
 
 template<class BedType>
-class SurfaceReactionModel
+class MassTransferModel
 :
     public BedSubModelBase<BedType>
 {
-protected:
-
-    // Protected data
-
-        //- Mass of lagrangian phase converted
-        scalar dMass_;
-
 
 public:
 
-    //-Runtime type information
-    TypeName("surfaceReactionModel");
-
+    //- Runtime type information
+    TypeName("massTransferModel");
 
     //- Declare runtime constructor selection table
     declareRunTimeSelectionTable
     (
         autoPtr,
-        SurfaceReactionModel,
+        MassTransferModel,
         dictionary,
         (
             const dictionary& dict,
-            BedType& bed
+            BedType& owner
         ),
-        (dict, bed)
+        (dict, owner)
     );
 
 
     // Constructors
 
         //- Construct null from owner
-        SurfaceReactionModel(BedType& owner);
+        MassTransferModel(BedType& owner);
 
         //- Construct from dictionary
-        SurfaceReactionModel
+        MassTransferModel
         (
             const dictionary& dict,
-            BedType& bed,
+            BedType& owner,
             const word& type
         );
 
         //- Construct copy
-        SurfaceReactionModel(const SurfaceReactionModel<BedType>& srm);
+        MassTransferModel(const MassTransferModel<BedType>& htm);
 
         //- Construct and return a clone
-        virtual autoPtr<SurfaceReactionModel<BedType>> clone() const = 0;
+        virtual autoPtr<MassTransferModel<BedType>> clone() const = 0;
 
 
     //- Destructor
-    virtual ~SurfaceReactionModel();
+    virtual ~MassTransferModel();
 
 
     //- Selector
-    static autoPtr<SurfaceReactionModel<BedType>> New
+    static autoPtr<MassTransferModel<BedType>> New
     (
         const dictionary& dict,
-        BedType& bed
+        BedType& owner
     );
 
 
     // Member Functions
 
-        //- Update surface reactions
-        //  Returns the heat of reaction
-        virtual scalar calculate
-        (
-            const scalar dt,
-            const label celli,
-            const scalar d,
-            const scalar d2nd,
-            const scalar T,
-            const scalar Tc,
-            const scalar pc,
-            const scalar rhoc,
-            const scalar muc,
-            const scalar Rec,
-            const scalar e_bed,
-            const scalar mass,
-            const scalar N,
-            scalar& dmass,
-            scalarField& dMassSRCarrier
-        ) const = 0;
+        // Evaluation
 
-        //- Add to devolatilisation mass
-        void addToSurfaceReactionMass(const scalar dMass);
+            //- Sherwood number
+            virtual scalar Sh
+            (
+                const scalar Re,
+                const scalar Sc
+            ) const = 0;
 
-
-        // I-O
-
-            //- Write injection info to stream
-            virtual void info(Ostream& os);
+            //- Return mass transfer coefficient
+            virtual scalar mtc
+            (
+                const scalar dp,
+                const scalar Re,
+                const scalar Sc,
+                const scalar D
+            ) const;
 };
 
 
@@ -156,42 +135,38 @@ public:
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-#define makeSurfaceReactionModel(BedType)                                      \
+#define makeMassTransferModel(BedType)                                         \
                                                                                \
-    typedef Foam::BedType::bioBedType                                          \
-        bioBedType;                                                            \
+    typedef Foam::BedType::bioBedType bioBedType;                              \
     defineNamedTemplateTypeNameAndDebug                                        \
     (                                                                          \
-        Foam::SurfaceReactionModel<bioBedType>,                                \
+        Foam::MassTransferModel<bioBedType>,                                   \
         0                                                                      \
     );                                                                         \
     namespace Foam                                                             \
     {                                                                          \
         defineTemplateRunTimeSelectionTable                                    \
         (                                                                      \
-            SurfaceReactionModel<bioBedType>,                                  \
+            MassTransferModel<bioBedType>,                                     \
             dictionary                                                         \
         );                                                                     \
     }
 
 
-#define makeSurfaceReactionModelType(SS, BedType)                              \
+#define makeMassTransferModelType(SS, BedType)                                 \
                                                                                \
-    typedef Foam::BedType::bioBedType                                          \
-        bioBedType;                                                            \
-    defineNamedTemplateTypeNameAndDebug                                        \
-        (Foam::SS<bioBedType>, 0);                                             \
+    typedef Foam::BedType::bioBedType bioBedType;                              \
+    defineNamedTemplateTypeNameAndDebug(Foam::SS<bioBedType>, 0);              \
                                                                                \
-    Foam::SurfaceReactionModel<bioBedType>::                                   \
-        adddictionaryConstructorToTable                                        \
-        <Foam::SS<bioBedType>>                                                 \
-        add##SS##BedType##bioBedType##ConstructorToTable_;
+    Foam::MassTransferModel<bioBedType>::                                      \
+        adddictionaryConstructorToTable<Foam::SS<bioBedType>>                  \
+            add##SS##BedType##bioBedType##ConstructorToTable_;
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #ifdef NoRepository
-    #include "SurfaceReactionModel.C"
+    #include "MassTransferModel.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

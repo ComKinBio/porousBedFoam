@@ -31,8 +31,8 @@ using namespace Foam::constant::mathematical;
 
 // * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
 
-template<class CloudType>
-Foam::tmp<Foam::scalarField> Foam::LiquidEvaporation<CloudType>::calcXc
+template<class BedType>
+Foam::tmp<Foam::scalarField> Foam::LiquidEvaporation<BedType>::calcXc
 (
     const label celli
 ) const
@@ -50,27 +50,16 @@ Foam::tmp<Foam::scalarField> Foam::LiquidEvaporation<CloudType>::calcXc
 }
 
 
-template<class CloudType>
-Foam::scalar Foam::LiquidEvaporation<CloudType>::Sh
-(
-    const scalar Re,
-    const scalar Sc
-) const
-{
-    return 2.0 + 0.6*Foam::sqrt(Re)*cbrt(Sc);
-}
-
-
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-template<class CloudType>
-Foam::LiquidEvaporation<CloudType>::LiquidEvaporation
+template<class BedType>
+Foam::LiquidEvaporation<BedType>::LiquidEvaporation
 (
     const dictionary& dict,
-    CloudType& owner
+    BedType& owner
 )
 :
-    PhaseChangeModel<CloudType>(dict, owner, typeName),
+    DryingModel<BedType>(dict, owner, typeName),
     liquids_(owner.thermo().liquids()),
     activeLiquids_(this->coeffDict().lookup("activeLiquids")),
     liqToCarrierMap_(activeLiquids_.size(), -1),
@@ -91,27 +80,26 @@ Foam::LiquidEvaporation<CloudType>::LiquidEvaporation
         {
             Info<< "    " << activeLiquids_[i] << endl;
             liqToCarrierMap_[i] =
-                owner.composition().carrierId(activeLiquids_[i]);
+                owner.thermo().carrierId(activeLiquids_[i]);
         }
 
         // Determine mapping between model active liquids and global liquids
-        const label idLiquid = owner.composition().idLiquid();
         forAll(activeLiquids_, i)
         {
             liqToLiqMap_[i] =
-                owner.composition().localId(idLiquid, activeLiquids_[i]);
+                owner.thermo().liquidId(activeLiquids_[i]);
         }
     }
 }
 
 
-template<class CloudType>
-Foam::LiquidEvaporation<CloudType>::LiquidEvaporation
+template<class BedType>
+Foam::LiquidEvaporation<BedType>::LiquidEvaporation
 (
-    const LiquidEvaporation<CloudType>& pcm
+    const LiquidEvaporation<BedType>& pcm
 )
 :
-    PhaseChangeModel<CloudType>(pcm),
+    DryingModel<BedType>(pcm),
     liquids_(pcm.owner().thermo().liquids()),
     activeLiquids_(pcm.activeLiquids_),
     liqToCarrierMap_(pcm.liqToCarrierMap_),
@@ -121,21 +109,22 @@ Foam::LiquidEvaporation<CloudType>::LiquidEvaporation
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
-template<class CloudType>
-Foam::LiquidEvaporation<CloudType>::~LiquidEvaporation()
+template<class BedType>
+Foam::LiquidEvaporation<BedType>::~LiquidEvaporation()
 {}
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-template<class CloudType>
-void Foam::LiquidEvaporation<CloudType>::calculate
+template<class BedType>
+void Foam::LiquidEvaporation<BedType>::calculate
 (
     const scalar dt,
     const label celli,
     const scalar Re,
-    const scalar Pr,
-    const scalar d,
+    const scalar Nu,
+    const scalar Sh,
+    const scalar d,//should also add d2nd
     const scalar nu,
     const scalar T,
     const scalar Ts,
@@ -183,12 +172,11 @@ void Foam::LiquidEvaporation<CloudType>::calculate
         // calculated evaporation rate will be greater than that of a particle
         // at boiling point, but this is not a boiling model
         const scalar pSat = liquids_.properties()[lid].pv(pc, T);
-
+        
         // Schmidt number
         const scalar Sc = nu/(Dab + rootVSmall);
-
-        // Sherwood number
-        const scalar Sh = this->Sh(Re, Sc);
+        
+        const scalar Sh = 2.0 + 0.6*Foam::sqrt(Re)*cbrt(Sc);
 
         // mass transfer coefficient [m/s]
         const scalar kc = Sh*Dab/(d + rootVSmall);
@@ -208,8 +196,8 @@ void Foam::LiquidEvaporation<CloudType>::calculate
 }
 
 
-template<class CloudType>
-Foam::scalar Foam::LiquidEvaporation<CloudType>::dh
+template<class BedType>
+Foam::scalar Foam::LiquidEvaporation<BedType>::dh
 (
     const label idc,
     const label idl,
@@ -219,7 +207,7 @@ Foam::scalar Foam::LiquidEvaporation<CloudType>::dh
 {
     scalar dh = 0;
 
-    typedef PhaseChangeModel<CloudType> parent;
+    typedef DryingModel<BedType> parent;
     switch (parent::enthalpyTransfer_)
     {
         case (parent::etLatentHeat):
@@ -229,7 +217,7 @@ Foam::scalar Foam::LiquidEvaporation<CloudType>::dh
         }
         case (parent::etEnthalpyDifference):
         {
-            scalar hc = this->owner().composition().carrier().Ha(idc, p, T);
+            scalar hc = this->owner().thermo().carrier().Ha(idc, p, T);
             scalar hp = liquids_.properties()[idl].h(p, T);
 
             dh = hc - hp;
@@ -246,8 +234,8 @@ Foam::scalar Foam::LiquidEvaporation<CloudType>::dh
 }
 
 
-template<class CloudType>
-Foam::scalar Foam::LiquidEvaporation<CloudType>::Tvap
+template<class BedType>
+Foam::scalar Foam::LiquidEvaporation<BedType>::Tvap
 (
     const scalarField& X
 ) const
@@ -256,8 +244,8 @@ Foam::scalar Foam::LiquidEvaporation<CloudType>::Tvap
 }
 
 
-template<class CloudType>
-Foam::scalar Foam::LiquidEvaporation<CloudType>::TMax
+template<class BedType>
+Foam::scalar Foam::LiquidEvaporation<BedType>::TMax
 (
     const scalar p,
     const scalarField& X

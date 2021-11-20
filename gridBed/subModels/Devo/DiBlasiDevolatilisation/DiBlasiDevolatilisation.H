@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Copyright (C) 2011-2019 OpenFOAM Foundation
+   \\    /   O peration     |
+    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -22,39 +22,50 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::SingleKineticRateDevolatilisation
+    Foam::DiBlasiDevolatilisation
 
 Description
-    Single kinetic rate devolatisation model.
+    Di Blasi devolatisation model.
     - acts on a per-specie basis
     - Rate given by Arrhenius eqn
 
-        kappa = A1.exp(- E/R.T)
+        kappa = Ax.exp(- Ex/R.T)
+		        gas 	kappa1
+        wood = 	tar	    kappa2
+		        char	kappa3
+		
+	tar = gas	kappa4
+	      char	kappa5
 
     Where:
         kappa = rate constant
-        A1    = pre-exponential factor (user input)
-        E     = activation energy (user input)
+        A1    = activation energy (user input)
+        E     = pre-exponential factor (user input)
         R     = universal gas constant
         T     = temperature
 
     Usage:
 
-        SingleKineticRateDevolatilisationCoeffs
+        DiBlasiDevolatilisationCoeffs
         {
-            volatileData
+            devolKinetic1	() // (A1 E1)
+            devolKinetic2	() // (A2 E2)
+            devolKinetic3	() // (A3 E3)
+            devolKinetic4	() // (A4 E4)
+            devolKinetic5	() // (A5 E5)
+            volgas
             (
-                (CH4     12     0.5     0.5)   // (name A1 E Y)
-                (CO2     12     0.5     0.5)   // (name A1 E Y)
+                (CH4     0.5 )   // (name weight_fraction)
+                (CO2     0.5)   // (name weight_fraction)
             );
-
+            
             volatileResidualCoeff 1e-6;
         }
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef SingleKineticRateDevolatilisation_H
-#define SingleKineticRateDevolatilisation_H
+#ifndef DiBlasiDevolatilisation_H
+#define DiBlasiDevolatilisation_H
 
 #include "DevolatilisationModel.H"
 
@@ -63,57 +74,45 @@ Description
 namespace Foam
 {
 /*---------------------------------------------------------------------------*\
-              Class SingleKineticRateDevolatilisation Declaration
+              Class DiBlasiDevolatilisation Declaration
 \*---------------------------------------------------------------------------*/
 
 template<class BedType>
-class SingleKineticRateDevolatilisation
+class DiBlasiDevolatilisation
 :
     public DevolatilisationModel<BedType>
 {
     // Helper class to store specie-local volatile data
-    class volatileData
+    class volgas
     {
-        // Private Data
+        // Private data
 
             //- Specie name
             word name_;
 
-            //- Activation energy
-            scalar A1_;
-
-            //- Pre-exponential factor
-            scalar E_;
-
-             //- Predefined composition
+            //- Weight fraction
             scalar Y_;
-
 
     public:
 
         // Constructors
 
             //- Null constructor
-            volatileData()
+            volgas()
             :
                 name_(word::null),
-                A1_(0.0),
-                E_(0.0),
                 Y_(0.0)
             {}
 
             //- Construct from Istream
-            volatileData(Istream& is)
+            volgas(Istream& is)
             :
                 name_(is),
-                A1_(readScalar(is)),
-                E_(readScalar(is)),
                 Y_(readScalar(is))
             {}
 
-
         //- Destructor
-        ~volatileData()
+        ~volgas()
         {}
 
 
@@ -127,19 +126,7 @@ class SingleKineticRateDevolatilisation
                     return name_;
                 }
 
-                //- Return const access to the activation energy
-                scalar A1() const
-                {
-                    return A1_;
-                }
-
-                //- Return const access to the pre-exponential factor
-                scalar E() const
-                {
-                    return E_;
-                }
-
-                //- Return const access to the predefined composition
+                //- Return const access to the weight fraction
                 scalar Y() const
                 {
                     return Y_;
@@ -149,73 +136,91 @@ class SingleKineticRateDevolatilisation
         // IOstream Operators
 
             //- Read from Istream
-            friend Istream& operator>>(Istream& is, volatileData& vd)
+            friend Istream& operator>>(Istream& is, volgas& vd)
             {
-                is.readBeginList("volatileData");
-                is  >>  vd.name_  >> vd.A1_  >> vd.E_  >> vd.Y_;
-                is.readEndList("volatileData");
+                is.readBeginList("volgas");
+                is  >>  vd.name_  >> vd.Y_;
+                is.readEndList("volgas");
 
                 return is;
             }
 
             //- Write to Ostream
-            friend Ostream& operator<<(Ostream& os, const volatileData& vd)
+            friend Ostream& operator<<(Ostream& os, const volgas& vd)
             {
                 os  << token::BEGIN_LIST
                     << vd.name_ << token::SPACE
-                    << vd.A1_ << token::SPACE
-                    << vd.E_ << token::SPACE
-                    << vd.Y_
+                    << vd.Y_ 
                     << token::END_LIST;
 
                 return os;
             }
     };
 
-
-    // Private Data
+    // Private data
 
         // Model constants
+    
+            //- List of volgas1 data - (name weight fraction for volatile gas 1)
+            List<volgas> volgas_;
 
-            //- List of volatile data - (name A1 E)
-            List<volatileData> volatileData_;
-
-            //- Mapping between local and bed gaseous species
+            //- Mapping between local and bed volatile gaseous species 1
             List<label> volatileToGasMap_;
 
             //- Volatile residual coefficient (0-1)
             //  When the fraction of volatiles are depleted below this
             //  threshold, combustion can occur
             const scalar residualCoeff_;
+    
+            //- flag whether to include second step tar reaction 
+            const bool secondReaction_;
+            
+            //- Kinetic parameters for the 1st devolatilisation reaction (A E)
+            const List<scalar> devolKinetic1_;
+            
+            //- Kinetic parameters for the 2nd devolatilisation reaction (A E)
+            const List<scalar> devolKinetic2_;
+            
+            //- Kinetic parameters for the 3rd devolatilisation reaction (A E)
+            const List<scalar> devolKinetic3_;
+            
+            //- Kinetic parameters for the 4th devolatilisation reaction (A E)
+            const List<scalar> devolKinetic4_;
+            
+            //- Kinetic parameters for the 5th devolatilisation reaction (A E)
+            const List<scalar> devolKinetic5_;
 
+            //- label for tar, should be named as "tar"
+            const label id_tar;
+	 
 
 public:
 
     //- Runtime type information
-    TypeName("singleKineticRateDevolatilisation");
+    TypeName("DiBlasiDevolatilisation");
 
 
     // Constructors
 
         //- Construct from dictionary
-        SingleKineticRateDevolatilisation
+        DiBlasiDevolatilisation
         (
             const dictionary& dict,
             BedType& owner
         );
 
         //- Construct and return a clone
-        virtual autoPtr<DevolatilisationModel<BedType>> clone() const
+        virtual autoPtr<DevolatilisationModel<BedType> > clone() const
         {
-            return autoPtr<DevolatilisationModel<BedType>>
+            return autoPtr<DevolatilisationModel<BedType> >
             (
-                new SingleKineticRateDevolatilisation<BedType>(*this)
+                new DiBlasiDevolatilisation<BedType>(*this)
             );
         }
 
 
     //- Destructor
-    virtual ~SingleKineticRateDevolatilisation();
+    virtual ~DiBlasiDevolatilisation();
 
 
     // Member Functions
@@ -243,7 +248,7 @@ public:
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #ifdef NoRepository
-    #include "SingleKineticRateDevolatilisation.C"
+#   include "DiBlasiDevolatilisation.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

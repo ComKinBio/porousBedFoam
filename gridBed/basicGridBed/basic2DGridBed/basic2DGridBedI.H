@@ -77,6 +77,12 @@ Foam::basic2DGridBed::particleProperties() const
 }
 
 
+inline Foam::Random& Foam::basic2DGridBed::rndGen() const
+{
+    return rndGen_;
+}
+
+
 inline const Foam::dictionary& 
 Foam::basic2DGridBed::constProperties() const
 {
@@ -123,6 +129,13 @@ inline Foam::scalar
 Foam::basic2DGridBed::rhop() const
 {
     return rhop_.value();
+}
+
+
+inline Foam::scalar
+Foam::basic2DGridBed::sphericity() const
+{
+    return sphericity_.value();
 }
 
 
