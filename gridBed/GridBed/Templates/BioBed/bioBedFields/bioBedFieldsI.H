@@ -28,7 +28,7 @@ License
 inline Foam::scalar
 Foam::bioBedFields::moisture() const
 {
-    return rmoisture_.value();
+    return moisture_.value();
 }
 
 

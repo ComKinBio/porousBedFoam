@@ -143,7 +143,7 @@ protected:
         const scalar alphaMin_;
         
         //- bed material density [kg/m^3]
-        demandDrivenEntry<scalar> rhop_; 
+        demandDrivenEntry<scalar> rhop0_; 
         
         //- particle sphericity
         demandDrivenEntry<scalar> sphericity_;   
@@ -153,6 +153,9 @@ protected:
                 
         //- total particle number
         volScalarField particleNumber_;
+        
+        //- overall particle density
+        volScalarField rhop_;
 
         //- volume average diameter of the particle fields [m]
         volScalarField dp_;
@@ -324,7 +327,7 @@ public:
                 inline scalar alphaMin() const;
                 
                 //- bed material density [kg/m^3]
-                inline scalar rhop() const;
+                inline scalar rhop0() const;
                 
                 //- particle sphericity
                 inline scalar sphericity() const;
@@ -404,6 +407,9 @@ public:
                 //- Return const access to total particle number
                 inline volScalarField particleNumber() const;
                 
+                //- Return const access to overall density
+                inline volScalarField rhop() const;
+                
                 //- Return const access to volume average diameter of the particle fields [m]
                 inline volScalarField dp() const;
                 
@@ -455,8 +461,11 @@ public:
             
             // Fields protected
 
-                //- Return access to to total particle number
+                //- Return access to total particle number
                 inline volScalarField& particleNumber();
+                
+                //- Return access to toverall density
+                inline volScalarField& rhop();
                 
                 //- Return access to volume average diameter of the particle fields [m]
                 inline volScalarField& dp();

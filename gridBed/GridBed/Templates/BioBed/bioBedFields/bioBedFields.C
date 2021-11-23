@@ -35,6 +35,7 @@ namespace Foam
     defineTypeNameAndDebug(bioBedFields, 0);
 }
 
+
 template<>
 const char* NamedEnum
 <
@@ -226,24 +227,20 @@ Foam::bioBedFields::bioBedFields
             )
         );
         
-        word dpname = "mass_" + name;
+        word massname = "mass_" + name;
         massPtrList_[e].reset
         (
             new volScalarField
             (
                 IOobject
                 (
-                    IOobject::groupName(bedName, dpname),
+                    IOobject::groupName(bedName, massname),
                     mesh_.time().timeName(),
                     mesh_,
                     IOobject::READ_IF_PRESENT,
                     IOobject::AUTO_WRITE
                 ),
-                mesh_,
-                dimensionedScalar
-                (   dimMass, 
-                    rhope(e)*particleNumbere(e)*pi/6.0*pow3(dpe(e))
-                ) 
+                rhope(e)*particleNumbere(e)*pi/6.0*pow3(dpe(e))
             )
         );
         
@@ -304,7 +301,7 @@ Foam::bioBedFields::bioBedFields
                 mesh_,
                 dimensionedScalar
                 (   dimPower/dimLength/dimTemperature, 
-                    bedKpe(e)
+                    kp0e(e)
                 )
             )
         );

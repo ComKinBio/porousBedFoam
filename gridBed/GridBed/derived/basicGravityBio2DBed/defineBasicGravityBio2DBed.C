@@ -21,51 +21,16 @@ License
     You should have received a copy of the GNU General Public License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-Class
-    Foam::basicBio2DBed
-
-Description
-    Definition of basic biofuel bed with Gravity collapse in 2D
-
-SourceFiles
-    basicBio2DBed.H
-
 \*---------------------------------------------------------------------------*/
 
-#ifndef basicGravityBio2DBed_H
-#define basicGravityBio2DBed_H
-
-#include "contiguous.H"
-#include "basic2DGridBed.H"
-#include "ThermoBed.H"
-#include "BioBed.H"
-#include "GravityBed.H"
+#include "basicGravityBio2DBed.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
 {
-    
-    typedef BioBed<ThermoBed<basic2DGridBed>> basicBio2DBed;
-
-    template<>
-    inline bool contiguous<basicBio2DBed>()
-    {
-        return true;
-    }
-    
-    
-    typedef GravityBed<BioBed<ThermoBed<basic2DGridBed>>> basicGravityBio2DBed;
-
-    template<>
-    inline bool contiguous<basicGravityBio2DBed>()
-    {
-        return true;
-    }
+    defineTemplateTypeNameAndDebug(basicGravityBio2DBed, 0);
 }
 
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-#endif
 
 // ************************************************************************* //

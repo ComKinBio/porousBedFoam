@@ -32,7 +32,7 @@ Description
 #include "turbulentFluidThermoModel.H"
 #include "basic2DGridBed.H"
 #include "basicGravity2DBed.H"
-// #include "basicBio2DBed.H"
+#include "basicGravityBio2DBed.H"
 #include "ParticleForce.H"
 #include "psiReactionThermo.H"
 #include "CombustionModel.H"
@@ -181,15 +181,15 @@ int main(int argc, char *argv[])
    
     
 
-//     basicBio2DBed testBed
-//     (
-//         "bed2d",
-//         mesh,
-//         rho,
-//         Uc,
-//         g,
-//         slgThermo
-//     );
+    basicGravityBio2DBed testBed
+    (
+        "bed2d",
+        mesh,
+        rho,
+        Uc,
+        g,
+        slgThermo
+    );
     
 //     basicGravity2DBed testBed
 //     (

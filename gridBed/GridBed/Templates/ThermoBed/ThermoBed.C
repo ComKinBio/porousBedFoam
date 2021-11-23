@@ -326,7 +326,7 @@ Foam::scalar Foam::ThermoBed<BedType>::calcHeatTransfer
     const scalar d2nd = this->dp2nd()[celli];
     const scalar As = this->areaS(d2nd);
     const scalar V = this->volume(d);
-    const scalar rhop = this->rhop();
+    const scalar rhop = this->rhop()[celli];
     const scalar m = V*rhop;
     const scalar T = bedT_[celli];
     const scalar cpbed = bedCp()[celli];

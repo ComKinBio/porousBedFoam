@@ -25,6 +25,11 @@ License
 
 #include "basicBio2DBed.H"
 
+namespace Foam
+{
+    defineTemplateTypeNameAndDebug(basicBio2DBed, 0);
+}
+
 // Kinematic
 #include "makeParcelMassTransferModels.H"
 #include "makeBioParcelDryingModels.H"

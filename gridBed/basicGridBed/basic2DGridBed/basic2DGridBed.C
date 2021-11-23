@@ -84,7 +84,7 @@ Foam::basic2DGridBed::basic2DGridBed
     forces_(nullptr),
     momentumExplicit_(true),
     alphaMin_(constProperties_.lookupOrDefault<scalar>("alphaMin", 0.01)),
-    rhop_(particleProperties_, "rhop"),
+    rhop0_(particleProperties_, "rhop0"),
     sphericity_(particleProperties_, "sphericity"),
     particleNumber_
     (
@@ -98,6 +98,19 @@ Foam::basic2DGridBed::basic2DGridBed
         ),
         mesh_,
         dimensionedScalar(dimless, 0)
+    ),
+    rhop_
+    (
+        IOobject
+        (
+            IOobject::groupName(bedName, "density"),
+            mesh_.time().timeName(),
+            mesh_,
+            IOobject::READ_IF_PRESENT,
+            IOobject::AUTO_WRITE
+        ),
+        mesh_,
+        dimensionedScalar(dimDensity, rhop0_.value())
     ),
     dp_
     (

@@ -26,7 +26,7 @@ License
 #include "BioBed.H"
 #include "meshTools.H"
 
-
+#include "bioBedFields.C"
 #include "MassTransferModel.H"
 #include "DryingModel.H"
 #include "DevolatilisationModel.H"
@@ -73,15 +73,25 @@ void Foam::BioBed<BedType>::setModels()
     );
 }
 
-// * * * * * * * * * * * * * *  Static Member  * * * * * * * * * * * * * * //
-
 // * * * * * * * * * * *  Protected Member Functions * * * * * * * * * * * * //
-// for (const auto i : Components)
-//     {
-//         Info<< "particlePhase.i:"<<i<<nl<<endl;
-//     }
+
+template<class BedType>
+void Foam::BioBed<BedType>::resetSourceTerms()
+{
+    forAll(rhoTrans_, i)
+    {
+        rhoTrans_[i].field() = 0.0;
+    }
+}
 
 
+template<class BedType>
+void Foam::BioBed<BedType>::preSolve()
+{
+    BedType::preSolve();
+    
+    resetSourceTerms();
+}
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
@@ -92,6 +102,7 @@ Foam::BioBed<BedType>::BioBed
     const fvMesh& mesh,
     const volScalarField& rho,
     const volVectorField& U,
+    const volScalarField& mu,
     const dimensionedVector& g,
     const SLGThermo& thermo
 )
@@ -127,33 +138,234 @@ Foam::BioBed<BedType>::BioBed
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 template<class BedType>
-void Foam::BioBed<BedType>::dryingUpdate
-(
-    
-)
-{
-    Random& rndGen = this->rndGen();
-}
-
-
-template<class BedType>
-void Foam::BioBed<BedType>::devoUpdate()
-{
-    
-}
-
-
-template<class BedType>
-void Foam::BioBed<BedType>::charBurnOutUpdate()
-{
-    
-}
-
-
-template<class BedType>
 void Foam::BioBed<BedType>::componentUpdate()
 {
+    //- update total particle number
+    tmp<volScalarField> tparticleNumber
+    (
+        volScalarField::New
+        (
+            this->bedName() + ":tparticleNumber",
+            this->mesh(),
+            dimensionedScalar(dimless, 0)
+        )
+    );
+
+    scalarField& numberRef = tparticleNumber.ref();
+    for (const auto e : bedComponents)
+    {
+        numberRef += particleNumbere(e);
+    }
+    this->particleNumber() = tparticleNumber;
     
+    
+    //- update particle average diameter
+    tmp<volScalarField> tdp
+    (
+        volScalarField::New
+        (
+            this->bedName() + ":tdp",
+            this->mesh(),
+            dimensionedScalar(dimLength, 0)
+        )
+    );
+
+    scalarField& dpRef = tdp.ref();
+    for (const auto e : bedComponents)
+    {
+        dpRef += pow3(dpe(e))*particleNumbere(e);
+    }
+    forAll(dpRef,i)
+    {
+        if (numberRef[i]>0)
+        {
+            dpRef[i] = cbrt(dpRef[i]/numberRef[i]);
+        }
+        else
+        {
+            dpRef[i] = dp0e(wet_);
+        }
+    }
+    this->dp() = tdp;
+    
+    
+    //- update particle average diameter2
+    tmp<volScalarField> tdp2
+    (
+        volScalarField::New
+        (
+            this->bedName() + ":tdp2",
+            this->mesh(),
+            dimensionedScalar(dimLength, 0)
+        )
+    );
+
+    scalarField& dp2Ref = tdp2.ref();
+    for (const auto e : bedComponents)
+    {
+        dp2Ref += sqr(dp2nde(e))*particleNumbere(e);
+    }
+    forAll(dp2Ref,i)
+    {
+        if (numberRef[i]>0)
+        {
+            dp2Ref[i] = sqrt(dp2Ref[i]/numberRef[i]);
+        }
+        else
+        {
+            dp2Ref[i] = dp0e(wet_);
+        }
+    }
+    this->dp2nd() = tdp2;
+    
+    
+    //- update particle average rhop
+    tmp<volScalarField> tmass
+    (
+        volScalarField::New
+        (
+            this->bedName() + ":tmass",
+            this->mesh(),
+            dimensionedScalar
+            (
+                dimMass, 
+                0
+            )
+        )
+    );
+
+    scalarField& tmassRef = tmass.ref();
+    for (const auto e : bedComponents)
+    {
+        tmassRef += masse(e);
+    }
+    
+    tmp<volScalarField> trhop
+    (
+        volScalarField::New
+        (
+            this->bedName() + ":trhop",
+            this->mesh(),
+            dimensionedScalar
+            (
+                dimDensity, 
+                0
+            )
+        )
+    );
+    scalarField& trhopRef = trhop.ref();
+    forAll(trhopRef,i)
+    {
+        if (numberRef[i]>0)
+        {
+            trhopRef[i] = tmassRef[i]/this->volume(dpRef[i]);
+        }
+        else
+        {
+            trhopRef[i] = this->rhop0();
+        }
+    }
+    this->rhop() = trhop;
+    
+
+    //- update particle average Cp
+    tmp<volScalarField> tCp
+    (
+        volScalarField::New
+        (
+            this->bedName() + ":tCp",
+            this->mesh(),
+            dimensionedScalar
+            (
+                dimEnergy/dimMass/dimTemperature, 
+                0
+            )
+        )
+    );
+
+    scalarField& tCpRef = tCp.ref();
+    for (const auto e : bedComponents)
+    {
+        tCpRef += bedCpe(e)*masse(e);
+    }
+    forAll(tCpRef,i)
+    {
+        if (numberRef[i]>0)
+        {
+            tCpRef[i] = tCpRef[i]/tmassRef[i];
+        }
+        else
+        {
+            tCpRef[i] = this->Cp0();
+        }
+    }
+    this->bedCp() = tCp;
+    
+    
+    //- update particle average kp
+    tmp<volScalarField> tkp
+    (
+        volScalarField::New
+        (
+            this->bedName() + ":tkp",
+            this->mesh(),
+            dimensionedScalar
+            (
+                dimPower/dimLength/dimTemperature, 
+                0
+            )
+        )
+    );
+
+    scalarField& tkpRef = tkp.ref();
+    for (const auto e : bedComponents)
+    {
+        tkpRef += bedKpe(e)*masse(e);
+    }
+    forAll(tkpRef,i)
+    {
+        if (numberRef[i]>0)
+        {
+            tkpRef[i] = tkpRef[i]/tmassRef[i];
+        }
+        else
+        {
+            tkpRef[i] = this->kp0();
+        }
+    }
+    this->bedKp() = tkp;
+    
+    
+    //- update particle average Tp
+    tmp<volScalarField> tTp
+    (
+        volScalarField::New
+        (
+            this->bedName() + ":tTp",
+            this->mesh(),
+            dimensionedScalar(dimTemperature, 0)
+        )
+    );
+
+    scalarField& tTpRef = tTp.ref();
+    for (const auto e : bedComponents)
+    {
+        tTpRef += bedTe(e)*masse(e)*bedCpe(e);
+    }
+    forAll(tTpRef,i)
+    {
+        if (numberRef[i]>0)
+        {
+            tTpRef[i] = tTpRef[i]/tmassRef[i]/tCpRef[i];
+        }
+        else
+        {
+            tTpRef[i] = this->Tc()[i];
+        }
+    }
+    this->bedT() = tTp;
+    
+    this->alphaCalc();
 }
 
 
@@ -182,7 +394,7 @@ Foam::scalar Foam::BioBed<BedType>::calcHeatTransfer
     const scalar V = this->volume(d);
 
     // Calc heat transfer coefficient
-    scalar htc = heatTransfer().htc(d, Re, Pr, kappa, NCpW);
+    scalar htc = this->heatTransfer().htc(d, Re, Pr, kappa, NCpW);
 
     // Calculate the integration coefficients
     const scalar bcp = htc*As/(m*cpbed);
@@ -197,13 +409,13 @@ Foam::scalar Foam::BioBed<BedType>::calcHeatTransfer
     ancp /= m*cpbed;
 
     // Integrate to find the new parcel temperature
-    const scalar deltaT = TIntegrator().delta(T, dt, acp + ancp, bcp);
+    const scalar deltaT = this->TIntegrator().delta(T, dt, acp + ancp, bcp);
     const scalar deltaTncp = ancp*dt;
     const scalar deltaTcp = deltaT - deltaTncp;
 
     // Calculate the new temperature and the enthalpy transfer terms
     scalar Tnew = T + deltaT;
-    Tnew = min(max(Tnew, TMin()), TMax());
+    Tnew = min(max(Tnew, this->TMin()), this->TMax());
 
     dhsTrans -= m*cpbed*deltaTcp;
 
@@ -212,5 +424,108 @@ Foam::scalar Foam::BioBed<BedType>::calcHeatTransfer
     return Tnew;
 }
 
+
+template<class BedType>
+void Foam::BioBed<BedType>::updateBedfieldsPrompt
+(
+    const label fromCell,
+    const label toCell,
+    const scalar number
+)
+{
+    for (const auto e : bedComponents)
+    {
+        scalar numbere = 
+            number*particleNumbere(e)[fromCell]\
+            /this->particleNumber()[fromCell];
+        numbere = std::round(number);
+            
+        if (numbere > particleNumbere(e)[fromCell])
+        {
+            numbere = particleNumbere(e)[fromCell];
+        }
+        
+        // Before transfer number records
+        scalar npj = particleNumbere(e)[toCell];
+        
+        // update number
+        particleNumbere(e)[fromCell] -= numbere;
+        particleNumbere(e)[toCell] += numbere;    
+        
+        // update dp_, toCell only
+        dpe(e)[toCell] = cbrt( (pow3(dpe(e)[toCell])*npj 
+                              + pow3(dpe(e)[fromCell])*numbere)\
+                               /particleNumbere(e)[toCell] );
+        
+        // update dp2nd_, toCell only
+        dp2nde(e)[toCell] = sqrt( (sqr( dp2nde(e)[toCell])*npj 
+                                 + sqr(dp2nde(e)[fromCell])*number)\
+                                  /particleNumbere(e)[toCell] );
+      
+        scalar dmassij = numbere/particleNumbere(e)[fromCell]*masse(e)[fromCell];
+        
+        // update conversion ratio
+        if (e == wet_)
+        {
+            w_percent()[toCell] = ( dmassij*w_percent()[fromCell] 
+                                  + masse(e)[toCell]*w_percent()[toCell] )\
+                                   /(dmassij + masse(e)[toCell]);
+        }
+        else if (e == dry_)
+        {
+            gamma_percent()[toCell] = ( dmassij*gamma_percent()[fromCell] 
+                                      + masse(e)[toCell]*gamma_percent()[toCell] )\
+                                       /(dmassij + masse(e)[toCell]);
+        }
+        else if (e == char_)
+        {
+            eta_percent()[toCell] = ( dmassij*eta_percent()[fromCell] 
+                                    + masse(e)[toCell]*eta_percent()[toCell] )\
+                                    /(dmassij + masse(e)[toCell]);
+        }
+        
+        // update temperature
+        bedTe(e)[toCell] = ( bedTe(e)[fromCell]*dmassij 
+                            + bedTe(e)[toCell]*masse(e)[toCell] )\
+                             /(dmassij + masse(e)[toCell]);
+        // update mass
+        
+        masse(e)[fromCell] -= dmassij;
+        masse(e)[toCell] += dmassij;
+
+        //- Constant, no update
+        //- Bed specific heat capacity field [J/kg/K]
+        //- and  heat conductivity field [J/s/m/K]        
+        
+        // update alpha in i,j
+        this->alpha_[fromCell] = 
+            max(1.0 - this->volume(fromCell)/this->mesh_.V()[fromCell], this->alphaMin_);
+        this->alpha_[toCell] = 
+            max(1.0 - this->volume(toCell)/this->mesh_.V()[toCell], this->alphaMin_);        
+    }
+}
+
+// template<class BedType>
+// void Foam::BioBed<BedType>::updateBedfieldsPrompt
+// (
+//     const scalar number,
+//     const label cell,
+//     const scalar dp,
+//     const scalar dp2nd
+// )
+// {
+//     
+// }
+// 
+// 
+// template<class BedType>
+// void Foam::BioBed<BedType>::updateBedfieldsPrompt
+// (
+//     const label cell,
+//     const scalar number
+// )
+// {
+//     
+// }
 
 // ************************************************************************* //

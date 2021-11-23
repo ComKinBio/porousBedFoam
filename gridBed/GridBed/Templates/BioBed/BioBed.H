@@ -166,11 +166,11 @@ protected:
         
         // bed calculate functions
 
-//             //- PreSolve 
-//             void preSolve();
-//             
-//             //- resetSourceTerms 
-//             void resetSourceTerms();
+            //- PreSolve 
+            void preSolve();
+            
+            //- resetSourceTerms 
+            void resetSourceTerms();
 
 
 public:
@@ -191,6 +191,7 @@ public:
             const fvMesh& mesh,
             const volScalarField& rho,
             const volVectorField& U,
+            const volScalarField& mu,
             const dimensionedVector& g,
             const SLGThermo& thermo
         );
@@ -211,9 +212,6 @@ public:
 
         // Access
 
-//             //- Return const access to active flag
-//             inline bool active() const;
-
             //- Return const access to the devolatilisation temperature
             inline scalar TDevol() const;
 
@@ -228,15 +226,6 @@ public:
             //- Return const access to the fraction of enthalpy retained by
             //  parcel due to surface reactions
             inline scalar hRetentionCoeff() const;
-
-           
-
-        // Edit
-/*
-            //- Return const access to active flag
-            inline bool& active();*/
-
-            //- Return access to type id
 
         
         // Sub-models
@@ -305,17 +294,31 @@ public:
                     const label i,
                     volScalarField& Yi
                 ) const;
+                
+                inline tmp<fvScalarMatrix> SYi
+                (
+                    const label i,
+                    volScalarField& Yi,
+                    const scalar dt
+                ) const;
 
                 //- Return tmp mass source for field i - fully explicit
                 inline tmp<volScalarField::Internal>
                     Srho(const label i) const;
+                    
+                inline tmp<volScalarField::Internal>
+                    Srho(const label i, const scalar dt) const;
 
                 //- Return tmp total mass source for carrier phase
                 //  - fully explicit
                 inline tmp<volScalarField::Internal> Srho() const;
+                
+                inline tmp<volScalarField::Internal> Srho(const scalar dt) const;
 
                 //- Return total mass source term [kg/m^3/s]
                 inline tmp<fvScalarMatrix> Srho(volScalarField& rho) const;
+                
+                inline tmp<fvScalarMatrix> Srho(volScalarField& rho, const scalar dt) const;
             
             
             
@@ -325,7 +328,8 @@ public:
             inline scalar dpAfterShrink
             (
                 const scalar dp, 
-                const scalar mass, 
+                const scalar mass,
+                const scalar dmass,
                 const scalar shrinkage
             ) const;
 
@@ -336,20 +340,84 @@ public:
 
             //- Thermo conversions
             
-                void calcDrying();
+                void calcDrying
+                (
+                    const scalar dt,
+                    const label celli,
+                    const scalar Re,
+                    const scalar Pr,
+                    const scalar Nu,
+                    const scalar Sh,
+                    const scalar nus,
+                    const scalar d,
+                    const scalar T,
+                    const scalar Ts,
+                    const scalar Tc,
+                    const scalar pc,
+                    const scalar mass,
+                    const scalar np,
+                    const scalarField& Y,
+                    scalarField& dMassPC,
+                    scalar& She,
+                    scalar& N,
+                    scalar& NCpW,
+                    scalarField& Cs
+                );
                 
-                void calcDevo();
+                void calcDevo
+                (
+                    const scalar dt,
+                    const scalar age,
+                    const scalar Ts,
+                    const scalar d,
+                    const scalar d2nd,
+                    const scalar T,
+                    const scalar mass,
+                    const scalar mass0,
+                    const scalar np,
+                    const scalar rhoc,
+                    const scalar pc,
+                    const scalar Tc,
+                    label& canCombust,
+                    scalarField& dMassDV,
+                    scalar& dMass,
+                    scalar& dMassChar,
+                    scalar& Sh,
+                    scalar& N,
+                    scalar& NCpW,
+                    scalarField& Cs
+                );
                 
-                void calcCharBurnOut();
+                void calcCharBurnOut
+                (
+                    const scalar dt,
+                    const label celli,
+                    const scalar d,
+                    const scalar d2nd,
+                    const scalar T,
+                    const scalar Tc,
+                    const scalar pc,
+                    const scalar rhoc,
+                    const scalar muc,
+                    const scalar Rec,
+                    const scalar e_bed,
+                    const scalar mass,
+                    const scalar np,
+                    const scalar N,
+                    scalar& dmass,
+                    scalarField& dMassSRCarrier,
+                    scalar& Sh,
+                    scalar& dhsTrans
+                );
                 
                 //- Main calculation scheme functions
                 //- According to the converted dmass, update bioBedFields
                 //- including check exchange numbers between bio components
-                void dryingUpdate();
-    
-                void devoUpdate(); 
-                
-                void charBurnOutUpdate();
+//                 void dryingUpdate();
+//     
+//                 void devoUpdate(); 
+//                 
+//                 void charBurnOutUpdate();
                 
                 //- solve heat transfer for the bed
                 void solveConversion(const scalar dt);
@@ -386,16 +454,16 @@ public:
                         scalar& dhsTrans,
                         scalar& Sph
                     );
-//                 
-//                 //- Reload from basic 
-//                    
-//                     //- update Bed fields according to particle number change
-//                     void updateBedfieldsPrompt
-//                     (
-//                         const label fromCell,
-//                         const label toCell,
-//                         const scalar number
-//                     );
+                
+                //- Reload from basic 
+                   
+                    //- update Bed fields according to particle number change
+                    void updateBedfieldsPrompt
+                    (
+                        const label fromCell,
+                        const label toCell,
+                        const scalar number
+                    );
 //                     
 //                     //- update Bed fields according to particle number change
 //                     //- reload function add initial particle from source

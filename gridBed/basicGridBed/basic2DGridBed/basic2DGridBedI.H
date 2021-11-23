@@ -126,9 +126,9 @@ Foam::basic2DGridBed::alphaMin() const
 
 
 inline Foam::scalar
-Foam::basic2DGridBed::rhop() const
+Foam::basic2DGridBed::rhop0() const
 {
-    return rhop_.value();
+    return rhop0_.value();
 }
 
 
@@ -215,7 +215,7 @@ Foam::basic2DGridBed::bedMass() const
     forAll(bedIDList_, id)
     {
         label celli = bedIDList_[id];
-        bedMass[celli] = rhop_.value()*pi/6.0*pow3(dp_[celli])*particleNumber_[celli];
+        bedMass[celli] = rhop_[celli]*pi/6.0*pow3(dp_[celli])*particleNumber_[celli];
     }
     
     return tbedMass;
@@ -239,7 +239,7 @@ Foam::basic2DGridBed::theta() const
     forAll(bedIDList_, id)
     {
         label celli = bedIDList_[id];
-        theta[celli] = rhop_.value()*pi/6.0*pow3(dp_[celli])*particleNumber_[celli];
+        theta[celli] = rhop_[celli]*pi/6.0*pow3(dp_[celli])*particleNumber_[celli];
     }
     
     theta /= (mesh_.V()*rho_);
@@ -349,6 +349,13 @@ Foam::basic2DGridBed::particleNumber() const
 
 
 inline Foam::volScalarField
+Foam::basic2DGridBed::rhop() const
+{
+    return rhop_;
+}
+
+
+inline Foam::volScalarField
 Foam::basic2DGridBed::dp() const
 {
     return dp_;
@@ -447,6 +454,13 @@ Foam::basic2DGridBed::particleNumber()
 
 
 inline Foam::volScalarField& 
+Foam::basic2DGridBed::rhop()
+{
+    return rhop_;
+}
+
+
+inline Foam::volScalarField& 
 Foam::basic2DGridBed::dp()
 {
     return dp_;
@@ -517,7 +531,7 @@ inline void Foam::basic2DGridBed::alphaCalc()
 inline Foam::scalar 
 Foam::basic2DGridBed::mass(const label celli) const
 {
-    return rhop_.value()*volume(celli);
+    return rhop_[celli]*volume(celli);
 }
 
 

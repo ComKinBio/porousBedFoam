@@ -30,6 +30,14 @@ using namespace Foam::constant::mathematical;
 // * * * * * * * BioBed Member Functions  * * * * * * * //
 
 template<class BedType>
+inline const Foam::SurfaceReactionModel<Foam::BioBed<BedType>>&
+Foam::BioBed<BedType>::surfaceReaction() const
+{
+    return surfaceReactionModel_;
+}
+
+
+template<class BedType>
 inline const Foam::MassTransferModel<Foam::BioBed<BedType>>&
 Foam::BioBed<BedType>::massTransfer() const
 {
@@ -57,7 +65,7 @@ template<class BedType>
 inline Foam::SurfaceReactionModel<Foam::BioBed<BedType>>&
 Foam::BioBed<BedType>::surfaceReaction()
 {
-    return surfaceReactionModel_;
+    return surfaceReactionModel_();
 }
 
 
@@ -82,15 +90,6 @@ inline Foam::DevolatilisationModel<Foam::BioBed<BedType>>&
 Foam::BioBed<BedType>::devolatilisation()
 {
     return devolatilisationModel_();
-}
-
-
-
-template<class BedType>
-inline Foam::SurfaceReactionModel<Foam::BioBed<BedType>>&
-Foam::BioBed<BedType>::surfaceReaction()
-{
-    return surfaceReactionModel_();
 }
 
 
@@ -149,8 +148,7 @@ inline Foam::scalar Foam::BioBed<BedType>::shrinkageFactorGamma() const
 
 
 template<class BedType>
-inline Foam::scalar Foam::BioBed<BedType>::::
-hRetentionCoeff() const
+inline Foam::scalar Foam::BioBed<BedType>::hRetentionCoeff() const
 {
     scalar value = hRetentionCoeff_.value();
 
@@ -165,95 +163,101 @@ hRetentionCoeff() const
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template<class CloudType>
+template<class BedType>
 inline Foam::DimensionedField<Foam::scalar, Foam::volMesh>&
-Foam::ReactingCloud<CloudType>::rhoTrans(const label i)
+Foam::BioBed<BedType>::rhoTrans(const label i)
 {
     return rhoTrans_[i];
 }
 
 
-template<class CloudType>
+template<class BedType>
 inline
 const Foam::PtrList<Foam::DimensionedField<Foam::scalar, Foam::volMesh>>&
-Foam::ReactingCloud<CloudType>::rhoTrans() const
+Foam::BioBed<BedType>::rhoTrans() const
 {
     return rhoTrans_;
 }
 
 
-template<class CloudType>
+template<class BedType>
 inline Foam::PtrList<Foam::DimensionedField<Foam::scalar, Foam::volMesh>>&
-Foam::ReactingCloud<CloudType>::rhoTrans()
+Foam::BioBed<BedType>::rhoTrans()
 {
     return rhoTrans_;
 }
 
 
-template<class CloudType>
-inline Foam::tmp<Foam::fvScalarMatrix> Foam::ReactingCloud<CloudType>::SYi
+template<class BedType>
+inline Foam::tmp<Foam::fvScalarMatrix> Foam::BioBed<BedType>::SYi
 (
     const label i,
     volScalarField& Yi
 ) const
 {
-    if (this->solution().coupled())
-    {
-        if (this->solution().semiImplicit("Yi"))
-        {
-            tmp<volScalarField> trhoTrans
-            (
-                volScalarField::New
-                (
-                    this->name() + ":rhoTrans",
-                    this->mesh(),
-                    dimensionedScalar(dimMass/dimTime/dimVolume, 0)
-                )
-            );
-
-            volScalarField& sourceField = trhoTrans.ref();
-
-            sourceField.primitiveFieldRef() =
-                rhoTrans_[i]/(this->db().time().deltaTValue()*this->mesh().V());
-
-            const dimensionedScalar Yismall("Yismall", dimless, small);
-
-            return
-                fvm::Sp(neg(sourceField)*sourceField/(Yi + Yismall), Yi)
-              + pos0(sourceField)*sourceField;
-        }
-        else
-        {
-            tmp<fvScalarMatrix> tfvm(new fvScalarMatrix(Yi, dimMass/dimTime));
-            fvScalarMatrix& fvm = tfvm.ref();
-
-            fvm.source() = -rhoTrans_[i]/this->db().time().deltaTValue();
-
-            return tfvm;
-        }
-    }
-
-    return tmp<fvScalarMatrix>(new fvScalarMatrix(Yi, dimMass/dimTime));
+    const scalar dt = this->mesh().time().deltaTValue();
+    
+    return SYi(i, Yi, dt);
 }
 
 
-template<class CloudType>
+template<class BedType>
+inline Foam::tmp<Foam::fvScalarMatrix> Foam::BioBed<BedType>::SYi
+(
+    const label i,
+    volScalarField& Yi,
+    const scalar dt
+) const
+{
+    if (speciesExplicit_)
+    {
+        tmp<fvScalarMatrix> tfvm(new fvScalarMatrix(Yi, dimMass/dimTime));
+        fvScalarMatrix& fvm = tfvm.ref();
+
+        fvm.source() = -rhoTrans_[i]/dt;
+
+        return tfvm;
+        
+    }
+    else
+    {
+        tmp<volScalarField> trhoTrans
+        (
+            volScalarField::New
+            (
+                this->name() + ":rhoTrans",
+                this->mesh(),
+                dimensionedScalar(dimMass/dimTime/dimVolume, 0)
+            )
+        );
+
+        volScalarField& sourceField = trhoTrans.ref();
+
+        sourceField.primitiveFieldRef() =
+            rhoTrans_[i]/(dt*this->mesh().V());
+
+        const dimensionedScalar Yismall("Yismall", dimless, small);
+
+        return
+            fvm::Sp(neg(sourceField)*sourceField/(Yi + Yismall), Yi)
+            + pos0(sourceField)*sourceField;
+    }
+}
+
+
+template<class BedType>
 inline Foam::tmp<Foam::DimensionedField<Foam::scalar, Foam::volMesh>>
-Foam::ReactingCloud<CloudType>::Srho(const label i) const
+Foam::BioBed<BedType>::Srho(const label i) const
+{
+    const scalar dt = this->mesh().time().deltaTValue();
+    
+    return Srho(i, dt);
+}
+
+
+template<class BedType>
+inline Foam::tmp<Foam::DimensionedField<Foam::scalar, Foam::volMesh>>
+Foam::BioBed<BedType>::Srho(const label i, const scalar dt) const
 {
     tmp<volScalarField::Internal> tRhoi
     (
@@ -269,19 +273,26 @@ Foam::ReactingCloud<CloudType>::Srho(const label i) const
         )
     );
 
-    if (this->solution().coupled())
-    {
-        scalarField& rhoi = tRhoi.ref();
-        rhoi = rhoTrans_[i]/(this->db().time().deltaTValue()*this->mesh().V());
-    }
+    scalarField& rhoi = tRhoi.ref();
+    rhoi = rhoTrans_[i]/(dt*this->mesh().V());
 
     return tRhoi;
 }
 
 
-template<class CloudType>
+template<class BedType>
 inline Foam::tmp<Foam::DimensionedField<Foam::scalar, Foam::volMesh>>
-Foam::ReactingCloud<CloudType>::Srho() const
+Foam::BioBed<BedType>::Srho() const
+{
+    const scalar dt = this->mesh().time().deltaTValue();
+    
+    return Srho(dt);
+}
+
+
+template<class BedType>
+inline Foam::tmp<Foam::DimensionedField<Foam::scalar, Foam::volMesh>>
+Foam::BioBed<BedType>::Srho(const scalar dt) const
 {
     tmp<volScalarField::Internal> trhoTrans
     (
@@ -297,77 +308,83 @@ Foam::ReactingCloud<CloudType>::Srho() const
         )
     );
 
-    if (this->solution().coupled())
+    scalarField& sourceField = trhoTrans.ref();
+    forAll(rhoTrans_, i)
     {
-        scalarField& sourceField = trhoTrans.ref();
+        sourceField += rhoTrans_[i];
+    }
+
+    sourceField /= dt*this->mesh().V();
+    
+    return trhoTrans;
+
+}
+
+
+template<class BedType>
+inline Foam::tmp<Foam::fvScalarMatrix>
+Foam::BioBed<BedType>::Srho(volScalarField& rho) const
+{
+    const scalar dt = this->mesh().time().deltaTValue();
+    
+    return Srho(rho, dt);
+}
+
+
+template<class BedType>
+inline Foam::tmp<Foam::fvScalarMatrix>
+Foam::BioBed<BedType>::Srho(volScalarField& rho, const scalar dt) const
+{
+    tmp<volScalarField> trhoTrans
+    (
+        volScalarField::New
+        (
+            this->name() + ":rhoTrans",
+            this->mesh(),
+            dimensionedScalar(dimMass/dimTime/dimVolume, 0)
+        )
+    );
+
+    scalarField& sourceField = trhoTrans.ref();
+
+    if (massExplicit_)
+    {
+
+        tmp<fvScalarMatrix> tfvm(new fvScalarMatrix(rho, dimMass/dimTime));
+        fvScalarMatrix& fvm = tfvm.ref();
+
         forAll(rhoTrans_, i)
         {
             sourceField += rhoTrans_[i];
         }
 
-        sourceField /= this->db().time().deltaTValue()*this->mesh().V();
+        fvm.source() = -trhoTrans()/dt;
+
+        return tfvm;
+        
+        
     }
-
-    return trhoTrans;
-}
-
-
-template<class CloudType>
-inline Foam::tmp<Foam::fvScalarMatrix>
-Foam::ReactingCloud<CloudType>::Srho(volScalarField& rho) const
-{
-    if (this->solution().coupled())
+    else
     {
-        tmp<volScalarField> trhoTrans
-        (
-            volScalarField::New
-            (
-                this->name() + ":rhoTrans",
-                this->mesh(),
-                dimensionedScalar(dimMass/dimTime/dimVolume, 0)
-            )
-        );
-
-        scalarField& sourceField = trhoTrans.ref();
-
-        if (this->solution().semiImplicit("rho"))
+        forAll(rhoTrans_, i)
         {
-
-            forAll(rhoTrans_, i)
-            {
-                sourceField += rhoTrans_[i];
-            }
-            sourceField /= this->db().time().deltaTValue()*this->mesh().V();
-
-            return fvm::SuSp(trhoTrans()/rho, rho);
+            sourceField += rhoTrans_[i];
         }
-        else
-        {
-            tmp<fvScalarMatrix> tfvm(new fvScalarMatrix(rho, dimMass/dimTime));
-            fvScalarMatrix& fvm = tfvm.ref();
+        sourceField /= dt*this->mesh().V();
 
-            forAll(rhoTrans_, i)
-            {
-                sourceField += rhoTrans_[i];
-            }
-
-            fvm.source() = -trhoTrans()/this->db().time().deltaT();
-
-            return tfvm;
-        }
+        return fvm::SuSp(trhoTrans()/rho, rho);
     }
 
-    return tmp<fvScalarMatrix>(new fvScalarMatrix(rho, dimMass/dimTime));
 }
 
-template<class CloudType>
-inline scalar dpAfterShrink
+template<class BedType>
+inline Foam::scalar Foam::BioBed<BedType>::dpAfterShrink
 (
     const scalar dp, 
     const scalar mass,
     const scalar dmass,
     const scalar shrinkage
-)
+) const
 {
     const scalar VpOldcube = pow3(dp);
     const scalar rhopcube = mass/VpOldcube;

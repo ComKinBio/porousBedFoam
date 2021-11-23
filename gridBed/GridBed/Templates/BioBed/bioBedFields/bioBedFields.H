@@ -84,13 +84,13 @@ protected:
         //- Fields constant properties
         
             //- Initial moisture wet based
-            demandDrivenEntry<scalar> moisture_
+            demandDrivenEntry<scalar> moisture_;
             
             //- Initial ash content dry based
-            demandDrivenEntry<scalar> ashContent_ 
+            demandDrivenEntry<scalar> ashContent_;
             
             //- Initial ash porosity is not changed
-            demandDrivenEntry<scalar> ashFixedPorosity_
+            demandDrivenEntry<scalar> ashFixedPorosity_;
         
         
         // bioField components properties, list size = 4
