@@ -55,8 +55,8 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
     
     const labelList bedList = this->bedIDList();
     //- In submodels that not really used in the calculation
-    scalar defaultScalar = 1;
     const scalar defaultConstScalar = 1;
+    label defaultLabel = 1;
     
      // Define local properties at beginning of timestep
     volScalarField& npWet = particleNumbere(wet_);
@@ -109,7 +109,7 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
         const label celli = bedList[i];
         const scalar pc = this->pc()[i];
         const scalar Tc = this->Tc()[i];
-        const scalar Uc = this->U()[i];
+        const vector Uc = this->U()[i];
         scalar G = 0.0;
         
         if (this->radiation())
@@ -120,17 +120,10 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
         // Sources
         //~~~~~~~~
 
-        // Explicit momentum source for particle
-        vector Su = Zero;
-
-        // Linearised momentum source coefficient
-        scalar Spu = 0.0;
-
-        // Momentum transfer from the particle to the carrier phase
-        vector dUTrans = Zero;
+        // Released gas do not have momentum transfer
 
         // Explicit enthalpy source for particle
-        scalar She = 0.0;
+        // scalar She = 0.0;
 
         // Linearised enthalpy source coefficient
         scalar Sphe = 0.0;
@@ -317,7 +310,7 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                     rhos,
                     pc,
                     Tc,
-                    true,
+                    defaultLabel,
                     dMassDV,
                     dMass,
                     dMassChar,
@@ -564,16 +557,16 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
         {
             scalar dm = npDryi*dMassDV[i];
             scalar hs = this->thermo().carrier().Hs(i, pc, T0Dry[celli]);
-            rhoTrans(i)[this->cell()] += dm;
-            this->hsTrans()[this->cell()] += dm*hs;
+            rhoTrans(i)[celli] += dm;
+            this->hsTrans()[celli] += dm*hs;
         }
         
         forAll(dMassSRCarrier, i)
         {
             scalar dm = npChari*dMassSRCarrier[i];
             scalar hs = this->thermo().carrier().Hs(i, pc, T0Char[celli]);
-            rhoTrans(i)[this->cell()] += dm;
-            this->hsTrans()[this->cell()] += dm*hs;
+            rhoTrans(i)[celli] += dm;
+            this->hsTrans()[celli] += dm*hs;
         }
 
         // Update sensible enthalpy transfer
@@ -681,7 +674,7 @@ void Foam::BioBed<BedType>::calcDrying
     const scalar dMassTot = sum(dMassPC);
 
     // Add to cumulative phase change mass
-    drying().addToPhaseChangeMass(np*dMassTot);
+    drying().addToDryingMass(np*dMassTot);
     
     
     forAll(dMassPC, i)
@@ -796,8 +789,8 @@ void Foam::BioBed<BedType>::calcDevo
         forAll(dMassDV, i)
         {
             // i is already global gas species id
-            const scalar Cp = this->thermo.carrier().Cp(i, pc, Ts);
-            const scalar W = this->thermo.carrier().Wi(i);
+            const scalar Cp = this->thermo().carrier().Cp(i, pc, Ts);
+            const scalar W = this->thermo().carrier().Wi(i);
             const scalar Ni = dMassDV[i]/(this->areaS(d2nd)*dt*W);
 
             // Dab calc'd using API vapour mass diffusivity function

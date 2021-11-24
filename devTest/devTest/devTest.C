@@ -179,6 +179,17 @@ int main(int argc, char *argv[])
     
     
    
+    const dimensionedScalar& dt = runTime.deltaT();
+    
+    Info<<" delta T: "<< dt<<nl<<endl;
+    
+    Info<<" deltaTValue T: "<< runTime.deltaTValue()<<nl<<endl;
+    
+    runTime.setDeltaT(0.001);
+    
+    Info<<" delta T: "<< dt<<nl<<endl;
+    
+    Info<<" deltaTValue T: "<< runTime.deltaTValue()<<nl<<endl;
     
 
     basicGravityBio2DBed testBed

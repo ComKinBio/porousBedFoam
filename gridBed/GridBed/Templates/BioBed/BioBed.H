@@ -421,6 +421,8 @@ public:
                 
                 //- solve heat transfer for the bed
                 void solveConversion(const scalar dt);
+
+                void solveConversion();
                 
             //- Components update, update averaged bed properties 
             //- According to the components

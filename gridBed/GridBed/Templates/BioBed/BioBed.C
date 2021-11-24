@@ -135,6 +135,14 @@ Foam::BioBed<BedType>::BioBed
 // solve thermo converison - void solveConversion
 #include"BioBedMainFunc.H" 
 
+template<class BedType>
+void Foam::BioBed<BedType>::solveConversion()
+{
+    const scalar dt = this->mesh().time().deltaTValue();
+    
+    solveConversion(dt);
+}
+
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 template<class BedType>
@@ -391,7 +399,6 @@ Foam::scalar Foam::BioBed<BedType>::calcHeatTransfer
 )
 {
     const scalar As = this->areaS(d2nd);
-    const scalar V = this->volume(d);
 
     // Calc heat transfer coefficient
     scalar htc = this->heatTransfer().htc(d, Re, Pr, kappa, NCpW);
