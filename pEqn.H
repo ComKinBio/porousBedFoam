@@ -25,14 +25,14 @@ if (pimple.transonic())
     {
         fvScalarMatrix pEqn
         (
-            fvm::ddt(alphacavg, psi, p)
+            fvm::ddt(alphac, psi, p)
           + fvm::div(alphacf*phid, p)
           - fvm::laplacian(alphacf*alphacf*rhocrAUcf, p)
          ==
-            fvOptions(psi, p, rhoc.name())
+            bioBed.Srho()
+          + fvOptions(psi, p, rhoc.name())
         );
 
-//         pEqn.solve(mesh.solver(p.select(pimple.finalInnerIter())));
         pEqn.solve();
 
         if (pimple.finalNonOrthogonalIter())
@@ -67,14 +67,14 @@ else
     {
         fvScalarMatrix pEqn
         (
-            fvm::ddt(alphacavg, psi, p)
+            fvm::ddt(alphac, psi, p)
           + fvc::div(alphacf*phiHbyA)
           - fvm::laplacian(alphacf*alphacf*rhocrAUcf, p)
          ==
-            fvOptions(psi, p, rhoc.name())
+            bioBed.Srho()
+          + fvOptions(psi, p, rhoc.name())
         );
 
-//         pEqn.solve(mesh.solver(p.select(pimple.finalInnerIter())));
         pEqn.solve();
 
         if (pimple.finalNonOrthogonalIter())
@@ -91,7 +91,7 @@ alphaRhoPhic = alphacf*rhocPhic;
 #include "rhocEqn.H"
 #include "compressibleContinuityErrs.H"
 
-Uc = HbyA - rAUc*alphacavg*fvc::grad(p);
+Uc = HbyA - rAUc*alphac*fvc::grad(p);
 Uc.correctBoundaryConditions();
 fvOptions.correct(Uc);
 

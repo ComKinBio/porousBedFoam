@@ -2,22 +2,11 @@
     volScalarField& he = thermo.he();
 
     const volScalarField alphaEff(turbulence->alphaEff());
-    
-    tmp<fv::convectionScheme<scalar>> mvConvection
-    (
-        fv::convectionScheme<scalar>::New
-        (
-            mesh,
-            fields,
-            alphaRhoPhic,
-            mesh.divScheme("div(alphaRhoPhi,he)")
-        )
-    );
 
     fvScalarMatrix EEqn
     (
-        fvm::ddt(alphacavg, rhoc, he) + mvConvection->fvmDiv(alphaRhoPhic, he)
-      + fvc::ddt(alphacavg, rhoc, Kc) + fvc::div(alphaRhoPhic, Kc)
+        fvm::ddt(alphac, rhoc, he) + mvConvection->fvmDiv(alphaRhoPhic, he)
+      + fvc::ddt(alphac, rhoc, Kc) + fvc::div(alphaRhoPhic, Kc)
       + (
             he.name() == "e"
           ? fvc::div
@@ -26,22 +15,20 @@
                 p,
                 "div(phiv,p)"
             )
-          : -dpdt*alphacavg
+          : -dpdt*alphac
         )
       - fvm::laplacian                
         (
-            fvc::interpolate(alphacavg)
+            fvc::interpolate(alphac)
            *fvc::interpolate(alphaEff),
             he
         )
      ==
-        alphacavg*rhoc*(Uc&g)
-      + averagedSh
-      + (
-            radiationHeat
-          ? (radiation->Sh(thermo, he) + fvOptions(rhoc, he))
-          : fvOptions(rhoc, he)
-        )
+        alphac*rhoc*(Uc&g)
+      + alphac*Qdot
+      + bioBed.Sh(he)
+      + radiation->Sh(thermo, he)
+      + fvOptions(rhoc, he)
     );
 
     EEqn.relax();

@@ -327,6 +327,18 @@ Foam::basic2DGridBed::SU
 }
 
 
+inline Foam::tmp<Foam::fvVectorMatrix>
+Foam::basic2DGridBed::SU
+(
+    volVectorField& U
+) const
+{
+    const scalar dt = this->mesh().time().deltaTValue();
+    
+    return SU(U, dt);
+}
+
+
 inline Foam::scalarList
 Foam::basic2DGridBed::addedNum() const
 {

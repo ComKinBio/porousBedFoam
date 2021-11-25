@@ -12,62 +12,18 @@ SLGThermo slgThermo(mesh, thermo);
 basicSpecieMixture& composition = thermo.composition();
 PtrList<volScalarField>& Y = composition.Y();
 
+const word inertSpecie(thermo.lookup("inertSpecie"));
+if (!composition.species().found(inertSpecie))
+{
+    FatalIOErrorIn(args.executable().c_str(), thermo)
+        << "Inert specie " << inertSpecie << " not found in available species "
+        << composition.species()
+        << exit(FatalIOError);
+}
+
 volScalarField& p = thermo.p();
 const volScalarField& T = thermo.T();
 const volScalarField& psi = thermo.psi();
-
-volScalarField Tavg
-(
-    IOobject
-    (
-        "Tavg",
-        runTime.timeName(),
-        mesh,
-        IOobject::READ_IF_PRESENT,
-        IOobject::AUTO_WRITE
-    ),
-    T
-);
-
-volScalarField kappaavg
-(
-    IOobject
-    (
-        "kappaavg",
-        runTime.timeName(),
-        mesh,
-        IOobject::READ_IF_PRESENT,
-        IOobject::AUTO_WRITE
-    ),
-    thermo.kappa()
-);
-    
-volScalarField Cpavg
-(
-    IOobject
-    (
-        "cpavg",
-        runTime.timeName(),
-        mesh,
-        IOobject::READ_IF_PRESENT,
-        IOobject::AUTO_WRITE
-    ),
-    thermo.Cp()
-);
-
-volScalarField muavg
-(
-    IOobject
-    (
-        "muavg",
-        runTime.timeName(),
-        mesh,
-        IOobject::READ_IF_PRESENT,
-        IOobject::AUTO_WRITE
-    ),
-    thermo.mu()
-);
-
 
 multivariateSurfaceInterpolationScheme<scalar>::fieldTable fields;
 
@@ -82,19 +38,6 @@ volScalarField rhoc
     IOobject
     (
         "rho",
-        runTime.timeName(),
-        mesh,
-        IOobject::NO_READ,
-        IOobject::AUTO_WRITE
-    ),
-    thermo.rho()
-);
-
-volScalarField rhoavg
-(
-    IOobject
-    (
-        "rhoavg",
         runTime.timeName(),
         mesh,
         IOobject::NO_READ,
@@ -118,7 +61,7 @@ volScalarField pDyn
     dimensionedScalar("zero",dimPressure, 0.0)
 );
 
-//change --
+// velocity
 Info<< "\nReading field Uc\n" << endl;
 volVectorField Uc
 (
@@ -133,23 +76,6 @@ volVectorField Uc
     mesh
 );
 
-volVectorField Ucavg
-(
-    IOobject
-    (
-        "Uavg",
-        runTime.timeName(),
-        mesh,
-        IOobject::NO_READ,
-        IOobject::AUTO_WRITE
-    ),
-    Uc
-);
-//--
-//change --
-//#include "compressibleCreatePhi.H"
-Info<< "Reading/calculating face flux field phic\n" << endl;
-
 surfaceScalarField phic
 (
     IOobject
@@ -163,27 +89,28 @@ surfaceScalarField phic
     linearInterpolate(Uc) & mesh.Sf()
 );
 
-label pRefCell = 0;
-scalar pRefValue = 0.0;
-setRefCell(p, pimple.dict(), pRefCell, pRefValue);
+#include "createMRF.H"
+#include "createBed.H"
+
+const word bedName = bioBed.bedName();
 
 mesh.setFluxRequired(p.name());
 
-volScalarField alphac
+volScalarField Qdot
 (
     IOobject
     (
-        "alphac",
+        "Qdot",
         runTime.timeName(),
         mesh,
         IOobject::READ_IF_PRESENT,
         IOobject::AUTO_WRITE
     ),
     mesh,
-    dimensionedScalar("alphac",dimless, 0.0)
+    dimensionedScalar("Qdot",dimEnergy/dimVolume/dimTime, 0.0)
 );
 
-volScalarField alphacavg
+volScalarField alphac
 (
     IOobject
     (
@@ -193,10 +120,10 @@ volScalarField alphacavg
         IOobject::READ_IF_PRESENT,
         IOobject::AUTO_WRITE
     ),
-    alphac
+    mesh,
+    dimensionedScalar("alphac",dimless, 0.0)
 );
 
-// #include "createDpdt.H"
 Info<< "Creating field dpdt\n" << endl;
 volScalarField dpdt
 (
@@ -207,75 +134,20 @@ volScalarField dpdt
         mesh
     ),
     mesh,
-    dimensionedScalar("dpdt", p.dimensions()/dimTime, 0)
-);//Tian
+    dimensionedScalar(p.dimensions()/dimTime, 0)
+);
 
-//change --
-//#include "createK.H"
 Info<< "Creating field kinetic energy Kc\n" << endl;
 volScalarField Kc("K", 0.5*magSqr(Uc));
 
-if (Uc.nOldTimes())
-{
-    volVectorField* Ucold = &Uc.oldTime();
-    volScalarField* Kcold = &Kc.oldTime();
-    *Kcold == 0.5*magSqr(*Ucold);
-
-    while (Ucold->nOldTimes())
-    {
-        Ucold = &Ucold->oldTime();
-        Kcold = &Kcold->oldTime();
-        *Kcold == 0.5*magSqr(*Ucold);
-    }
-}
-
-#include "createMRF.H"
-
-#include "filter.H"
-
-#include "createClouds.H"
-
-volScalarField parcelNumber
-(
-    IOobject
-    (
-        "parcelNumber",
-        runTime.timeName(),
-        mesh,
-        IOobject::NO_READ,
-        IOobject::NO_WRITE
-    ),
-    steelParcels.np()
-);
-
-volScalarField parcelVolumeField
-(
-    IOobject
-    (
-        "parcelVolumeField",
-        runTime.timeName(),
-        mesh,
-        IOobject::NO_READ,
-        IOobject::NO_WRITE
-    ),
-    steelParcels.parcelVolumeField()
-);
-
-scalar alphacMin
-(
-    readScalar
-    (
-        steelParcels.particleProperties().subDict("constantProperties")
-       .lookup("alphaMin")
-    )
-);
+scalar alphacMin = bioBed.alphaMin();
 
 // Update alphac from the particle locations
-alphac = max(1.0 - steelParcels.theta(), alphacMin);
+alphac = max(1.0 - bioBed.beta(), alphacMin);
 alphac.correctBoundaryConditions();
 
-surfaceScalarField alphacf("alphaf", fvc::interpolate(alphacavg));
-// Info<<"alphacf: "<<alphacf<<endl;
+surfaceScalarField alphacf("alphaf", fvc::interpolate(alphac));
+
 surfaceScalarField rhocPhic
 (
     IOobject
@@ -304,11 +176,11 @@ surfaceScalarField alphaRhoPhic
 
 
 Info<< "Creating turbulence model\n" << endl;
-autoPtr<coalChemistryTurbulenceModel> turbulence
+autoPtr<bedTurbulenceModel> turbulence
 (
-    coalChemistryTurbulenceModel::New
+    bedTurbulenceModel::New
     (
-        alphacavg,
+        alphac,
         rhoc,
         Uc,
         alphaRhoPhic,
@@ -317,14 +189,68 @@ autoPtr<coalChemistryTurbulenceModel> turbulence
     )
 );
 
+Info<< "Creating combustion model\n" << endl;
+autoPtr<CombustionModel<psiReactionThermo>> combustion
+(
+    CombustionModel<psiReactionThermo>::New(thermo, turbulence())
+);
 
-
-//--
 #include "createRadiationModel.H"
-
 #include "createFvOptions.H"
 
+IOdictionary radiationDict
+(
+    IOobject
+    (
+        "radiationProperties",
+        runTime.constant(),
+        mesh,
+        IOobject::READ_IF_PRESENT,
+        IOobject::NO_WRITE
+    )
+);
 
+label radiationsolverFreq = radiationDict.lookupOrDefault<label>("solverFreq", 1);
+radiationsolverFreq = max(1, radiationsolverFreq);
 
+volScalarField bedap
+(
+    IOobject
+    (
+        bedName + ".ap",
+        runTime.timeName(),
+        mesh,
+        IOobject::READ_IF_PRESENT,
+        IOobject::AUTO_WRITE
+    ),
+    mesh,
+    dimensionedScalar(dimless/dimLength, 0)
+);
 
+volScalarField bedEp
+(
+    IOobject
+    (
+        bedName + ".Ep",
+        runTime.timeName(),
+        mesh,
+        IOobject::READ_IF_PRESENT,
+        IOobject::AUTO_WRITE
+    ),
+    mesh,
+    dimensionedScalar(dimMass/dimLength/pow3(dimTime), 0)
+);
 
+volScalarField bedsigmap
+(
+    IOobject
+    (
+        bedName + ".sigmap",
+        runTime.timeName(),
+        mesh,
+        IOobject::READ_IF_PRESENT,
+        IOobject::AUTO_WRITE
+    ),
+    mesh,
+    dimensionedScalar(dimless/dimLength, 0)
+);

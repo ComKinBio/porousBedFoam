@@ -225,7 +225,7 @@ inline Foam::tmp<Foam::fvScalarMatrix> Foam::BioBed<BedType>::SYi
         (
             volScalarField::New
             (
-                this->name() + ":rhoTrans",
+                this->bedName() + ":rhoTrans",
                 this->mesh(),
                 dimensionedScalar(dimMass/dimTime/dimVolume, 0)
             )
@@ -263,7 +263,7 @@ Foam::BioBed<BedType>::Srho(const label i, const scalar dt) const
     (
         volScalarField::Internal::New
         (
-            this->name() + ":rhoTrans",
+            this->bedName() + ":rhoTrans",
             this->mesh(),
             dimensionedScalar
             (
@@ -298,7 +298,7 @@ Foam::BioBed<BedType>::Srho(const scalar dt) const
     (
         volScalarField::Internal::New
         (
-            this->name() + ":rhoTrans",
+            this->bedName() + ":rhoTrans",
             this->mesh(),
             dimensionedScalar
             (
@@ -339,7 +339,7 @@ Foam::BioBed<BedType>::Srho(volScalarField& rho, const scalar dt) const
     (
         volScalarField::New
         (
-            this->name() + ":rhoTrans",
+            this->bedName() + ":rhoTrans",
             this->mesh(),
             dimensionedScalar(dimMass/dimTime/dimVolume, 0)
         )
@@ -391,8 +391,7 @@ inline Foam::scalar Foam::BioBed<BedType>::dpAfterShrink
     const scalar rhopcube = mass/VpOldcube;
     
     const scalar dVpcube = dmass/rhopcube*shrinkage;
- Info<<"VpOldcube: "<<VpOldcube <<"rhopcube: "<<rhopcube <<"dVpcube: "<< dVpcube<<nl<<endl;  
- Info<<"cbrt(VpOldcube - dVpcube): "<< cbrt(VpOldcube - dVpcube)<<nl<<endl;  
+ 
     return cbrt(VpOldcube - dVpcube);
 }
 

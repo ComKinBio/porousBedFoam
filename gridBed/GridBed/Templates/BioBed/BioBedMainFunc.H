@@ -34,8 +34,6 @@ Description
 template<class BedType>
 void Foam::BioBed<BedType>::solveConversion(const scalar dt)
 {
-//debug
-    Info<<"solveConversion start"<<nl<<endl;
     
     preSolve();
     
@@ -158,7 +156,7 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
             scalarField Yliquids(1,1);//Only one species, its mass fraction is 1
 
 //debug
-    Info<<"solveConversion drying start"<<nl<<endl;
+//     Info<<"solveConversion drying start"<<nl<<endl;
                 
             const scalar npWeti = npWet[celli];
             if (npWeti >= 1)
@@ -167,8 +165,7 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                 const scalar d2ndWeti = d2ndWet[celli];
                 const scalar T0Weti = T0Wet[celli];
                 const scalar mass0Wateri = mass0Wet[celli]*w[celli];
-//debug
-    Info<<"solveConversion drying w[celli]: "<<w[celli]<<nl<<endl;   
+ 
                 // Calc surface values for wet particle
                 this->calcSurfaceValues(celli, T0Weti, Ts, rhos, mus, Prs, kappas);
                 scalar Res = this->Re(rhos, Uc, d2ndWeti, mus);
@@ -201,14 +198,11 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                     NCpW,
                     Cs
                 );
-//debug
-    Info<<"solveConversion drying calcDrying called"<<nl<<endl;                
+
                 // dMassDrying is the total mass of vaparized water
                 // Update wet bed fields
                 if (mag(sum(dMassDrying) - mass0Wateri/npWeti)<small && mass0Wateri > small)
-                {
-//debug
-    Info<<"solveConversion drying start update0 "<<nl<<endl; 
+                { 
                     T0Dry[celli] = (T0Dry[celli]*cpDry[celli]*mass0Dry[celli]
                                   + T0Wet[celli]*cpWet[celli]*mass0Wet[celli]*(1-w[celli]))\
                                   /(cpDry[celli]*mass0Dry[celli]
@@ -235,10 +229,7 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                 }
                 else
                 {
-//debug
-    Info<<"solveConversion drying start update1 "<<", dWeti: "<<dWeti<<nl<<endl; 
                     dWet[celli] = dpAfterShrink(dWeti, mass0Wet[celli]/npWeti, sum(dMassDrying), shrinkageFactorAlpha());
-    Info<<"solveConversion drying start update1, sum(dMassDrying)"<<sum(dMassDrying)<<" dWet[celli]: "<<dWet[celli]<<endl; 
                     d2ndWet[celli] = dWet[celli]/sqrt(this->sphericity());
                     mass0Wet[celli] -= sum(dMassDrying)*npWeti;
                     w[celli] = (mass0Wateri - sum(dMassDrying)*npWeti)/mass0Wet[celli];
@@ -281,7 +272,7 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
             }
             
 //debug
-    Info<<"solveConversion Devolatilisation start"<<nl<<endl;            
+//     Info<<"solveConversion Devolatilisation start"<<nl<<endl;            
 
             // Devolatilisation
             // ~~~~~~~~~~~~~~~~
@@ -354,8 +345,7 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                                  /(npChar[celli] + npDry[celli]));
                     d2ndChar[celli] = sqrt((pow3(d2ndChar[celli])*npChar[celli] + pow3(d2ndDry[celli])*npDryi)\
                                     /(npChar[celli] + npDry[celli]));
-//debug
-    Info<<"solveConversion Devolatilisation, ashContent()"<<ashContent()<<nl<<endl;                      
+                     
                     eta[celli] = (newMass*npDryi*ashContent()
                                 + mass0Char[celli]*eta[celli])\
                                 /(mass0Char[celli] + newMass*npDryi);
@@ -412,7 +402,7 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
             }
             
 //debug
-    Info<<"solveConversion Surface reactions start"<<nl<<endl;              
+//     Info<<"solveConversion Surface reactions start"<<nl<<endl;              
             // Surface reactions
             // ~~~~~~~~~~~~~~~~
             
@@ -526,7 +516,7 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                 }
             }
 //debug
-    Info<<"solveConversion heatTransfer for ash start"<<nl<<endl;              
+//     Info<<"solveConversion heatTransfer for ash start"<<nl<<endl;              
             const scalar npAshi = npAsh[celli];
             if (npChari >= 1)
             {
@@ -567,34 +557,20 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                dhsTrans += dhsTransAsh*npAshi;
             }
 //debug
-    Info<<"solveConversion carrier coupling start"<<nl<<endl;     
+//     Info<<"solveConversion carrier coupling start"<<nl<<endl;     
         // 2. Accumulate carrier phase source terms
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//debug
-    Info<<"solveConversion carrier coupling drying start"<<nl<<" T0Wet[celli] :"<<T0Wet[celli]<<endl;    
+   
         // Transfer mass lost to carrier mass, momentum and enthalpy sources
         forAll(dMassDrying, i)
         {
             const label cid = this->thermo().carrierId(this->thermo().liquids().components()[i]);
-//debug
-    Info<<"solveConversion carrier dMassDrying"<<nl<<" cid :"<<cid<<endl;
             scalar dm = npWeti*dMassDrying[i];
-//debug
-    Info<<"solveConversion carrier dMassDrying"<<nl<<" dm :"<<dm<<endl;
             scalar hs = this->thermo().carrier().Hs(cid, pc, T0Wet[celli]);
-//debug
-    Info<<"solveConversion carrier dMassDrying"<<nl<<" hs :"<<hs<<endl;
             rhoTrans(cid)[celli] += dm;
-//debug
-    Info<<"solveConversion carrier dMassDrying"<<nl<<" celli :"<<celli<<" rhoTrans(cid)[celli] :"<<rhoTrans(cid)[celli]<<endl;
             this->hsTrans()[celli] += dm*hs;
-//debug
-    Info<<"solveConversion carrier dMassDrying"<<nl<<"  this->hsTrans()[celli] :"<< this->hsTrans()[celli]<<endl;
         }
- //debug
-    Info<<"solveConversion carrier coupling devo start"<<nl<<" T0Dry[celli] :"<<T0Dry[celli]<<endl; 
-//debug
-    Info<<"solveConversion carrier coupling devo"<<nl<<" dMassDV :"<<dMassDV<<endl;
+
         forAll(dMassDV, i)
         {
             scalar dm = npDryi*dMassDV[i];
@@ -602,11 +578,7 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
             rhoTrans(i)[celli] += dm;
             this->hsTrans()[celli] += dm*hs;
         }
- //debug
-    Info<<"solveConversion carrier coupling SR start"<<nl<<" T0Char[celli]: "<< T0Char[celli]<<endl;
-    
-//debug
-    Info<<"solveConversion carrier coupling SR"<<nl<<" dMassSRCarrier :"<<dMassSRCarrier<<endl;
+
         forAll(dMassSRCarrier, i)
         {
             scalar dm = npChari*dMassSRCarrier[i];
@@ -618,8 +590,7 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
         // Update sensible enthalpy transfer
         this->hsTrans()[celli] += dhsTrans;
         this->hsCoeff()[celli] += Sphe;
- //debug
-    Info<<"solveConversion carrier coupling radiation start"<<nl<<endl;  
+  
         // Update radiation fields
         if (this->radiation())
         {
@@ -644,8 +615,7 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
     
     // 3. Update particle average properites and calc momentum transfers
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//debug
-    Info<<"solveConversion componentUpdate start"<<nl<<endl;    
+  
     // Update particle average properites
     // ~~~~~~~~~~~~~
     componentUpdate();
@@ -653,12 +623,9 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
         // Correct surface values due to emitted species
 //         this->correctSurfaceValues(cloud, td, Ts, Cs, rhos, mus, Prs, kappas);
 //         Res = this->Re(rhos, U0, td.Uc(), this->d_, mus);
-//debug
-    Info<<"solveConversion momentum transfer start"<<nl<<endl;
+
     //- calculate the momentum transfer
-    this->solve(dt);
-//debug
-    Info<<"solveConversion called"<<nl<<endl;    
+    this->solve(dt);  
 }
 
 
@@ -687,8 +654,6 @@ void Foam::BioBed<BedType>::calcDrying
     scalarField& Cs
 )
 {
-//debug
-    Info<<"solveConversion drying, calcDrying start"<<nl<<endl;
     scalarField X(this->thermo().liquids().X(Y));
 
     scalar Tvap = drying().Tvap(X);
@@ -719,14 +684,12 @@ void Foam::BioBed<BedType>::calcDrying
         X,
         dMassPC
     );
-//debug
-    Info<<"solveConversion drying, calcDrying  calculated"<<nl<<endl;
+
     // Limit phase change mass by availability of each specie
     dMassPC = min(mass/np, dMassPC);
 
     const scalar dMassTot = sum(dMassPC);
-//debug
-    Info<<"solveConversion drying, calcDrying  calculated, dMassTot: "<<dMassTot<<nl<<endl;
+
     // Add to cumulative phase change mass
     drying().addToDryingMass(np*dMassTot);
     
@@ -734,8 +697,6 @@ void Foam::BioBed<BedType>::calcDrying
     forAll(dMassPC, i)
     {
         const label cid = this->thermo().carrierId(this->thermo().liquids().components()[i]);
-//debug
-    Info<<"solveConversion drying, calcDrying  calculated, dh start, Tdash: "<<Tdash<<nl<<" dt: "<<dt<<endl;
         const scalar dh = drying().dh(cid, i, pc, Tdash);
         She -= dMassPC[i]*dh/dt;
     }

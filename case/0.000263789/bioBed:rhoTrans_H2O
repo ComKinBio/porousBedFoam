@@ -1,0 +1,23 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  7
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField::Internal;
+    location    "0.000263789";
+    object      bioBed:rhoTrans_H2O;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [1 0 0 0 0 0 0];
+
+value           nonuniform List<scalar> 9(1.838299945e-07 2.061096654e-07 2.082255664e-07 1.888280967e-07 2.099811332e-07 0 1.963036851e-07 0 0);
+
+
+// ************************************************************************* //

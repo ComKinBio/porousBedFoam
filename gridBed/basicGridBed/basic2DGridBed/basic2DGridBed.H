@@ -391,6 +391,8 @@ public:
 
                     //- Return tmp momentum source term
                     inline tmp<fvVectorMatrix> SU(volVectorField& U, const scalar dt) const;
+
+                    inline tmp<fvVectorMatrix> SU(volVectorField& U) const;
                     
             
             // Bed recored information
