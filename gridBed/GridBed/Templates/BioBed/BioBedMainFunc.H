@@ -34,7 +34,9 @@ Description
 template<class BedType>
 void Foam::BioBed<BedType>::solveConversion(const scalar dt)
 {
-
+//debug
+    Info<<"solveConversion start"<<nl<<endl;
+    
     preSolve();
     
     tmp<volScalarField> Gc
@@ -154,7 +156,10 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
             scalarField dMassDrying(this->thermo().liquids().size(), 0.0);
             
             scalarField Yliquids(1,1);//Only one species, its mass fraction is 1
-            
+
+//debug
+    Info<<"solveConversion drying start"<<nl<<endl;
+                
             const scalar npWeti = npWet[celli];
             if (npWeti >= 1)
             {
@@ -162,7 +167,8 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                 const scalar d2ndWeti = d2ndWet[celli];
                 const scalar T0Weti = T0Wet[celli];
                 const scalar mass0Wateri = mass0Wet[celli]*w[celli];
-
+//debug
+    Info<<"solveConversion drying w[celli]: "<<w[celli]<<nl<<endl;   
                 // Calc surface values for wet particle
                 this->calcSurfaceValues(celli, T0Weti, Ts, rhos, mus, Prs, kappas);
                 scalar Res = this->Re(rhos, Uc, d2ndWeti, mus);
@@ -195,17 +201,20 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                     NCpW,
                     Cs
                 );
-                
+//debug
+    Info<<"solveConversion drying calcDrying called"<<nl<<endl;                
                 // dMassDrying is the total mass of vaparized water
                 // Update wet bed fields
-                if (mag(sum(dMassDrying) - mass0Wateri)<small)
+                if (mag(sum(dMassDrying) - mass0Wateri/npWeti)<small && mass0Wateri > small)
                 {
-                    T0Dry[celli] = (T0Dry[celli]*cpDry[celli]*mass0Dry[celli]*npDry[celli]
-                                  + T0Wet[celli]*cpWet[celli]*mass0Wet[celli]*npWet[celli])\
-                                  /(cpDry[celli]*mass0Dry[celli]*npDry[celli]
-                                  + cpWet[celli]*mass0Wet[celli]*npWet[celli]);
+//debug
+    Info<<"solveConversion drying start update0 "<<nl<<endl; 
+                    T0Dry[celli] = (T0Dry[celli]*cpDry[celli]*mass0Dry[celli]
+                                  + T0Wet[celli]*cpWet[celli]*mass0Wet[celli]*(1-w[celli]))\
+                                  /(cpDry[celli]*mass0Dry[celli]
+                                  + cpWet[celli]*mass0Wet[celli]*(1-w[celli]));
                     
-                    dWet[celli] = dpAfterShrink(dWeti, mass0Wet[celli], mass0Wateri, shrinkageFactorAlpha());
+                    dWet[celli] = dpAfterShrink(dWeti, mass0Wet[celli]/npWeti, sum(dMassDrying), shrinkageFactorAlpha());
                     d2ndWet[celli] = dWet[celli]/sqrt(this->sphericity());
 
                     dDry[celli] = cbrt((pow3(dDry[celli])*npDry[celli] + pow3(dWet[celli])*npWeti)\
@@ -213,8 +222,8 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                     d2ndDry[celli] = sqrt((pow3(d2ndDry[celli])*npDry[celli] + pow3(d2ndWet[celli])*npWeti)\
                                     /(npDry[celli] + npWet[celli]));
                     
-                    gamma[celli] = mass0Dry[celli]*gamma[celli]*npDry[celli]\
-                                  /(mass0Dry[celli]*(1 - gamma[celli])*npDry[celli]\
+                    gamma[celli] = mass0Dry[celli]*gamma[celli]\
+                                  /(mass0Dry[celli]*(1 - gamma[celli])\
                                   + mass0Wet[celli]*(1- w[celli])*npWeti);
                     mass0Dry[celli] += mass0Wet[celli]*(1- w[celli]);
                     
@@ -226,47 +235,53 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                 }
                 else
                 {
-                    dWet[celli] = dpAfterShrink(dWeti, mass0Wet[celli], sum(dMassDrying), shrinkageFactorAlpha());
+//debug
+    Info<<"solveConversion drying start update1 "<<", dWeti: "<<dWeti<<nl<<endl; 
+                    dWet[celli] = dpAfterShrink(dWeti, mass0Wet[celli]/npWeti, sum(dMassDrying), shrinkageFactorAlpha());
+    Info<<"solveConversion drying start update1, sum(dMassDrying)"<<sum(dMassDrying)<<" dWet[celli]: "<<dWet[celli]<<endl; 
                     d2ndWet[celli] = dWet[celli]/sqrt(this->sphericity());
-                    mass0Wet[celli] -= sum(dMassDrying);
-                    w[celli] = (mass0Wateri - sum(dMassDrying))/mass0Wet[celli];
+                    mass0Wet[celli] -= sum(dMassDrying)*npWeti;
+                    w[celli] = (mass0Wateri - sum(dMassDrying)*npWeti)/mass0Wet[celli];
                 }
                 
                 // Calculate new particle temperature
                 // Correct surface values due to emitted species
 //                 this->correctSurfaceValues(Ts, Cs, rhos, mus, Prs, kappas);
-                Res = this->Re(rhos, Uc, d2ndWet[celli], mus);
+                if (npWet[celli] > 0)
+                {
+                    Res = this->Re(rhos, Uc, d2ndWet[celli], mus);
                 
-                // Calculate new particle temperature
-                const scalar cpWeti = cpWet[celli];
-                
-                T0Wet[celli] =
-                    calcHeatTransfer
-                    (
-                        dt,
-                        dWet[celli],
-                        d2ndWet[celli],
-                        mass0Wet[celli],
-                        T0Wet[celli],
-                        cpWeti,
-                        Tc,
-                        Res,
-                        Prs,
-                        kappaWet,
-                        NCpW,
-                        shWet,
-                        G,
-                        epsilon0Wet,
-                        dhsTransWet,
-                        sphWet
-                    );
-                
-               Sphe += sphWet*npWet[celli];
-               dhsTrans += dhsTransWet*npWet[celli];
-                        
+                    // Calculate new particle temperature
+                    const scalar cpWeti = cpWet[celli];
+                    
+                    T0Wet[celli] =
+                        calcHeatTransfer
+                        (
+                            dt,
+                            dWet[celli],
+                            d2ndWet[celli],
+                            mass0Wet[celli]/npWet[celli],
+                            T0Wet[celli],
+                            cpWeti,
+                            Tc,
+                            Res,
+                            Prs,
+                            kappaWet,
+                            NCpW,
+                            shWet,
+                            G,
+                            epsilon0Wet,
+                            dhsTransWet,
+                            sphWet
+                        );
+                    
+                Sphe += sphWet*npWet[celli];
+                dhsTrans += dhsTransWet*npWet[celli];
+                }
             }
             
-            
+//debug
+    Info<<"solveConversion Devolatilisation start"<<nl<<endl;            
 
             // Devolatilisation
             // ~~~~~~~~~~~~~~~~
@@ -282,8 +297,8 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                 const scalar dDryi = dDry[celli];
                 const scalar d2ndDryi = d2ndDry[celli];
                 const scalar T0Dryi = T0Dry[celli];
-                const scalar mass0YieldChari = mass0Dry[celli]*gamma[celli];
-                const scalar mass0ActiveDryi = mass0Dry[celli]*(1-gamma[celli]);
+                const scalar mass0YieldChari = mass0Dry[celli]*gamma[celli]/npDryi;
+                const scalar mass0ActiveDryi = mass0Dry[celli]*(1-gamma[celli])/npDryi;
             
                 
                 // Calc surface values for wet particle
@@ -321,25 +336,30 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                 );
                 
                 // dMass is the total mass of devo wood
-                if (mag(dMass - mass0ActiveDryi)<small)
+                if (mag(dMass - mass0ActiveDryi)<small && mass0ActiveDryi > small)
                 {
-                    T0Char[celli] = (T0Char[celli]*cpChar[celli]*mass0Char[celli]*npChar[celli]
-                                  + T0Dry[celli]*cpDry[celli]*mass0Dry[celli]*npDry[celli])\
-                                  /(cpChar[celli]*mass0Char[celli]*npChar[celli]
-                                  + cpDry[celli]*mass0Dry[celli]*npDry[celli]);
+                    scalar newMass = dMassChar + mass0YieldChari;
                     
-                    dDry[celli] = dpAfterShrink(dDryi, mass0Dry[celli], dMass, shrinkageFactorBeta());
+                    scalar dMassLoss = sum(dMassDV);
+                    
+                    T0Char[celli] = (T0Char[celli]*cpChar[celli]*mass0Char[celli]
+                                   + T0Dry[celli]*cpDry[celli]*newMass*npDry[celli])\
+                                   /(cpChar[celli]*mass0Char[celli]
+                                   + cpDry[celli]*newMass*npDry[celli]);
+                    
+                    dDry[celli] = dpAfterShrink(dDryi, mass0Dry[celli]/npDryi, dMassLoss, shrinkageFactorBeta());
                     d2ndDry[celli] = dDry[celli]/sqrt(this->sphericity());
 
                     dChar[celli] = cbrt((pow3(dChar[celli])*npChar[celli] + pow3(dDry[celli])*npDryi)\
                                  /(npChar[celli] + npDry[celli]));
                     d2ndChar[celli] = sqrt((pow3(d2ndChar[celli])*npChar[celli] + pow3(d2ndDry[celli])*npDryi)\
                                     /(npChar[celli] + npDry[celli]));
-                    
-                    eta[celli] = mass0Char[celli]*eta[celli]*npChar[celli]\
-                                  /(mass0Char[celli]*(1 - eta[celli])*npChar[celli]\
-                                  + mass0Dry[celli]*(1- gamma[celli])*npDryi);
-                    mass0Char[celli] += mass0Dry[celli]*(1- gamma[celli]);
+//debug
+    Info<<"solveConversion Devolatilisation, ashContent()"<<ashContent()<<nl<<endl;                      
+                    eta[celli] = (newMass*npDryi*ashContent()
+                                + mass0Char[celli]*eta[celli])\
+                                /(mass0Char[celli] + newMass*npDryi);
+                    mass0Char[celli] += newMass*npDryi;
                     
                     gamma[celli] = 0;
                     mass0Dry[celli] = 0;
@@ -349,47 +369,50 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                 }
                 else
                 {
-                    dDry[celli] = dpAfterShrink(dDryi, mass0Dry[celli], dMass, shrinkageFactorBeta());
+                    dDry[celli] = dpAfterShrink(dDryi, mass0Dry[celli]/npDryi, dMass, shrinkageFactorBeta());
                     d2ndDry[celli] = dDry[celli]/sqrt(this->sphericity());
-                    gamma[celli] = mass0YieldChari/(mass0Dry[celli]- dMass);
+                    gamma[celli] = (mass0YieldChari + dMassChar)*dDryi/(mass0Dry[celli]- sum(dMassDV)*dDryi);
                     mass0Dry[celli] -= dMass;
                 }
                 
                 // Calculate new particle temperature
                 // Correct surface values due to emitted species
 //                 this->correctSurfaceValues(Ts, Cs, rhos, mus, Prs, kappas);
-                scalar Res = this->Re(rhos, Uc, d2ndDry[celli], mus);
-                
-                // Calculate new particle temperature
-                const scalar cpDryi = cpDry[celli];
+                if (npDry[celli] > 0)
+                {
+                    scalar Res = this->Re(rhos, Uc, d2ndDry[celli], mus);
+                    
+                    // Calculate new particle temperature
+                    const scalar cpDryi = cpDry[celli];
 
-                T0Dry[celli] =
-                    calcHeatTransfer
-                    (
-                        dt,
-                        dDry[celli],
-                        d2ndDry[celli],
-                        mass0Dry[celli],
-                        T0Dry[celli],
-                        cpDryi,
-                        Tc,
-                        Res,
-                        Prs,
-                        kappaDry,
-                        NCpW,
-                        shDry,
-                        G,
-                        epsilon0Dry,
-                        dhsTransDry,
-                        sphDry
-                    );
-                
-               Sphe += sphDry*npDry[celli];
-               dhsTrans += dhsTransDry*npDry[celli];
-            
+                    T0Dry[celli] =
+                        calcHeatTransfer
+                        (
+                            dt,
+                            dDry[celli],
+                            d2ndDry[celli],
+                            mass0Dry[celli]/npDry[celli],
+                            T0Dry[celli],
+                            cpDryi,
+                            Tc,
+                            Res,
+                            Prs,
+                            kappaDry,
+                            NCpW,
+                            shDry,
+                            G,
+                            epsilon0Dry,
+                            dhsTransDry,
+                            sphDry
+                        );
+                    
+                    Sphe += sphDry*npDry[celli];
+                    dhsTrans += dhsTransDry*npDry[celli];
+                }
             }
             
-            
+//debug
+    Info<<"solveConversion Surface reactions start"<<nl<<endl;              
             // Surface reactions
             // ~~~~~~~~~~~~~~~~
             
@@ -403,8 +426,8 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                 const scalar dChari = dChar[celli];
                 const scalar d2ndChari = d2ndChar[celli];
                 const scalar T0Chari = T0Char[celli];
-                const scalar mass0AshInChari = mass0Char[celli]*eta[celli];
-                const scalar mass0ActiveChari = mass0Char[celli]*(1-eta[celli]);
+                const scalar mass0AshInChari = mass0Char[celli]*eta[celli]/npChari;
+                const scalar mass0ActiveChari = mass0Char[celli]*(1-eta[celli])/npChari;
             
                 
                 // Calc surface values for wet particle
@@ -443,14 +466,14 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                 );
                 
                 // dmassCharBurned is the total mass of char burnout
-                if (mag(dmassCharBurned - mass0ActiveChari)<small)
-                {
-                    T0Ash[celli] = (T0Ash[celli]*cpAsh[celli]*mass0Ash[celli]*npAsh[celli]
-                                  + T0Char[celli]*cpChar[celli]*mass0Char[celli]*npChar[celli])\
-                                  /(cpAsh[celli]*mass0Ash[celli]*npAsh[celli]
-                                  + cpChar[celli]*mass0Char[celli]*npChar[celli]);
+                if (mag(dmassCharBurned - mass0ActiveChari)<small && mass0ActiveChari > small)
+                {                    
+                    T0Ash[celli] = (T0Ash[celli]*cpAsh[celli]*mass0Ash[celli]
+                                  + T0Char[celli]*cpChar[celli]*mass0AshInChari*npChar[celli])\
+                                  /(cpAsh[celli]*mass0Ash[celli]
+                                  + cpChar[celli]*mass0AshInChari*npChar[celli]);
                     
-                    mass0Ash[celli] += mass0Char[celli]*(1- gamma[celli]);
+                    mass0Ash[celli] += mass0AshInChari*npChar[celli];
                     
                     eta[celli] = 0;
                     mass0Char[celli] = 0;
@@ -460,46 +483,50 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                 }
                 else
                 {
-                    dChar[celli] = dpAfterShrink(dChari, mass0Char[celli], dmassCharBurned, shrinkageFactorBeta());
+                    dChar[celli] = 
+                        dpAfterShrink(dChari, mass0Char[celli]/npChar[celli], dmassCharBurned, shrinkageFactorBeta());
                     d2ndChar[celli] = dChar[celli]/sqrt(this->sphericity());
-                    eta[celli] = mass0AshInChari/(mass0Char[celli]- dmassCharBurned);
-                    mass0Char[celli] -= dmassCharBurned;
+                    eta[celli] = mass0AshInChari*npChar[celli]/(mass0Char[celli]- dmassCharBurned*npChar[celli]);
+                    mass0Char[celli] -= dmassCharBurned*npChar[celli];
                 }
                 
                 // Calculate new particle temperature
                 // Correct surface values due to emitted species
 //                 this->correctSurfaceValues(Ts, Cs, rhos, mus, Prs, kappas);
-                Res = this->Re(rhos, Uc, d2ndChar[celli], mus);
+                if (npChar[celli] > 0)
+                {
+                    Res = this->Re(rhos, Uc, d2ndChar[celli], mus);
                 
-                // Calculate new particle temperature
-                const scalar cpChari = cpChar[celli];
-                
-                T0Char[celli] =
-                    calcHeatTransfer
-                    (
-                        dt,
-                        dChar[celli],
-                        d2ndChar[celli],
-                        mass0Char[celli],
-                        T0Char[celli],
-                        cpChari,
-                        Tc,
-                        Res,
-                        Prs,
-                        kappaChar,
-                        NCpW,
-                        shChar,
-                        G,
-                        epsilon0Char,
-                        dhsTransChar,
-                        sphChar
-                    );
-                
-               Sphe += sphChar*npChar[celli];
-               dhsTrans += dhsTransChar*npChar[celli];
-                
+                    // Calculate new particle temperature
+                    const scalar cpChari = cpChar[celli];
+                    
+                    T0Char[celli] =
+                        calcHeatTransfer
+                        (
+                            dt,
+                            dChar[celli],
+                            d2ndChar[celli],
+                            mass0Char[celli]/npChar[celli],
+                            T0Char[celli],
+                            cpChari,
+                            Tc,
+                            Res,
+                            Prs,
+                            kappaChar,
+                            NCpW,
+                            shChar,
+                            G,
+                            epsilon0Char,
+                            dhsTransChar,
+                            sphChar
+                        );
+                    
+                    Sphe += sphChar*npChar[celli];
+                    dhsTrans += dhsTransChar*npChar[celli];  
+                }
             }
-            
+//debug
+    Info<<"solveConversion heatTransfer for ash start"<<nl<<endl;              
             const scalar npAshi = npAsh[celli];
             if (npChari >= 1)
             {
@@ -521,7 +548,7 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                         dt,
                         dAshi,
                         d2ndAshi,
-                        mass0Ash[celli],
+                        mass0Ash[celli]/npAshi,
                         T0Ashi,
                         cpAshi,
                         Tc,
@@ -539,20 +566,35 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                Sphe += sphAsh*npAshi;
                dhsTrans += dhsTransAsh*npAshi;
             }
-
+//debug
+    Info<<"solveConversion carrier coupling start"<<nl<<endl;     
         // 2. Accumulate carrier phase source terms
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+//debug
+    Info<<"solveConversion carrier coupling drying start"<<nl<<" T0Wet[celli] :"<<T0Wet[celli]<<endl;    
         // Transfer mass lost to carrier mass, momentum and enthalpy sources
         forAll(dMassDrying, i)
         {
             const label cid = this->thermo().carrierId(this->thermo().liquids().components()[i]);
+//debug
+    Info<<"solveConversion carrier dMassDrying"<<nl<<" cid :"<<cid<<endl;
             scalar dm = npWeti*dMassDrying[i];
+//debug
+    Info<<"solveConversion carrier dMassDrying"<<nl<<" dm :"<<dm<<endl;
             scalar hs = this->thermo().carrier().Hs(cid, pc, T0Wet[celli]);
+//debug
+    Info<<"solveConversion carrier dMassDrying"<<nl<<" hs :"<<hs<<endl;
             rhoTrans(cid)[celli] += dm;
+//debug
+    Info<<"solveConversion carrier dMassDrying"<<nl<<" celli :"<<celli<<" rhoTrans(cid)[celli] :"<<rhoTrans(cid)[celli]<<endl;
             this->hsTrans()[celli] += dm*hs;
+//debug
+    Info<<"solveConversion carrier dMassDrying"<<nl<<"  this->hsTrans()[celli] :"<< this->hsTrans()[celli]<<endl;
         }
-        
+ //debug
+    Info<<"solveConversion carrier coupling devo start"<<nl<<" T0Dry[celli] :"<<T0Dry[celli]<<endl; 
+//debug
+    Info<<"solveConversion carrier coupling devo"<<nl<<" dMassDV :"<<dMassDV<<endl;
         forAll(dMassDV, i)
         {
             scalar dm = npDryi*dMassDV[i];
@@ -560,7 +602,11 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
             rhoTrans(i)[celli] += dm;
             this->hsTrans()[celli] += dm*hs;
         }
-        
+ //debug
+    Info<<"solveConversion carrier coupling SR start"<<nl<<" T0Char[celli]: "<< T0Char[celli]<<endl;
+    
+//debug
+    Info<<"solveConversion carrier coupling SR"<<nl<<" dMassSRCarrier :"<<dMassSRCarrier<<endl;
         forAll(dMassSRCarrier, i)
         {
             scalar dm = npChari*dMassSRCarrier[i];
@@ -572,7 +618,8 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
         // Update sensible enthalpy transfer
         this->hsTrans()[celli] += dhsTrans;
         this->hsCoeff()[celli] += Sphe;
-
+ //debug
+    Info<<"solveConversion carrier coupling radiation start"<<nl<<endl;  
         // Update radiation fields
         if (this->radiation())
         {
@@ -597,7 +644,8 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
     
     // 3. Update particle average properites and calc momentum transfers
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+//debug
+    Info<<"solveConversion componentUpdate start"<<nl<<endl;    
     // Update particle average properites
     // ~~~~~~~~~~~~~
     componentUpdate();
@@ -605,10 +653,12 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
         // Correct surface values due to emitted species
 //         this->correctSurfaceValues(cloud, td, Ts, Cs, rhos, mus, Prs, kappas);
 //         Res = this->Re(rhos, U0, td.Uc(), this->d_, mus);
-
+//debug
+    Info<<"solveConversion momentum transfer start"<<nl<<endl;
     //- calculate the momentum transfer
     this->solve(dt);
-    
+//debug
+    Info<<"solveConversion called"<<nl<<endl;    
 }
 
 
@@ -637,6 +687,8 @@ void Foam::BioBed<BedType>::calcDrying
     scalarField& Cs
 )
 {
+//debug
+    Info<<"solveConversion drying, calcDrying start"<<nl<<endl;
     scalarField X(this->thermo().liquids().X(Y));
 
     scalar Tvap = drying().Tvap(X);
@@ -667,12 +719,14 @@ void Foam::BioBed<BedType>::calcDrying
         X,
         dMassPC
     );
-
+//debug
+    Info<<"solveConversion drying, calcDrying  calculated"<<nl<<endl;
     // Limit phase change mass by availability of each specie
-    dMassPC = min(mass, dMassPC);
+    dMassPC = min(mass/np, dMassPC);
 
     const scalar dMassTot = sum(dMassPC);
-
+//debug
+    Info<<"solveConversion drying, calcDrying  calculated, dMassTot: "<<dMassTot<<nl<<endl;
     // Add to cumulative phase change mass
     drying().addToDryingMass(np*dMassTot);
     
@@ -680,7 +734,8 @@ void Foam::BioBed<BedType>::calcDrying
     forAll(dMassPC, i)
     {
         const label cid = this->thermo().carrierId(this->thermo().liquids().components()[i]);
-
+//debug
+    Info<<"solveConversion drying, calcDrying  calculated, dh start, Tdash: "<<Tdash<<nl<<" dt: "<<dt<<endl;
         const scalar dh = drying().dh(cid, i, pc, Tdash);
         She -= dMassPC[i]*dh/dt;
     }

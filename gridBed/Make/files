@@ -31,4 +31,9 @@ $(DERIVEDBEDS)/basicThermo2DBed/makeBasicThermo2DBedSubmodels.C
 /*$(DERIVEDBEDS)/basicGravityBio2DBed/defineBasicGravityBio2DBed.C*/
 $(DERIVEDBEDS)/basicGravityBio2DBed/makeBasicGravityBio2DBedSubmodels.C
 
+/* bolt-on models */
+RADIATION=subModels/radiation
+$(RADIATION)/absorptionEmission/bedAbsorptionEmission/bedAbsorptionEmission.C
+$(RADIATION)/scatter/bedScatter/bedScatter.C
+
 LIB = $(FOAM_USER_LIBBIN)/libgridBed

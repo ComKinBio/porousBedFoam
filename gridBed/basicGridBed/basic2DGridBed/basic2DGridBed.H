@@ -82,7 +82,7 @@ protected:
     //initial input information
     
         //- bedName
-        const word& bedName_;
+        const word bedName_;
     
         //fluid Mesh class
         const fvMesh& mesh_;

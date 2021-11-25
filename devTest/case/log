@@ -6,11 +6,11 @@
      \\/     M anipulation  |
 \*---------------------------------------------------------------------------*/
 Build  : 7
-Exec   : devTest
-Date   : Nov 07 2021
-Time   : 03:07:04
+Exec   : biomassBedFoam
+Date   : Nov 25 2021
+Time   : 18:57:41
 Host   : "dhcp-062140"
-PID    : 3274
+PID    : 11154
 I/O    : uncollated
 Case   : /calcuDrive/Jingyuan/OpenFOAM/jingyuaz-7/solver/porousBedFoam/devTest/case
 nProcs : 1
@@ -21,13 +21,18 @@ allowSystemOperations : Allowing user-supplied system call operations
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 Create time
 
-Create mesh for time = 0
+Create mesh for time = 0.000642815
+
+
+PIMPLE: No convergence criteria found
+
+
+PIMPLE: Operating solver in transient mode with 1 outer corrector
+PIMPLE: Operating solver in PISO mode
+
 
 
 Reading g
-
-ExecutionTime = 0.01 s  ClockTime = 0 s
-
 Reading thermophysical properties
 
 Selecting thermodynamics package 
@@ -47,290 +52,435 @@ Creating component thermo properties:
     multi-component carrier - 10 species
     liquids - 1 components
     solids - 4 components
+
+Reading field Uc
+
+No MRF models present
+
+
+Constructing fuel bed
 Construct coarse grid
     Selecting particle force sphereDrag
 Selecting Momentum integration scheme Euler
-Bed model: bed2d Constructed
-alphaBed field: dimensions      [0 0 0 0 0 0 0];
+Bed model: bioBed Constructed
+Selecting heat transfer model RanzMarshall
+Selecting T integration scheme analytical
+bioBedFields constructor called here
 
-internalField   nonuniform List<scalar> 9(0.6826674087 0.6826674087 0.6826674087 0.6826674087 0.6826674087 1 0.6826674087 1 1);
+Selecting heat transfer model RanzMarshall
+Selecting phase change model liquidEvaporation
+Participating liquid species:
+    H2O
+Selecting devolatilisation model DiBlasiDevolatilisation
+Volatile info:
+ Kinetic data:
+  wood -> gas A:1.1e+11 E:177000000
+  wood -> tar A:9280000000 E:149000000
+  wood -> char A:30500000 E:125000000
+  tar -> gas A:4280000 E:107500000
+  tar -> char A:100000 E:107500000
+Selecting surface reaction model COxidationKineticDiffusionLimitedRate
+BioBed Constructor called
 
-boundaryField
+Creating field dpdt
+
+Creating field kinetic energy Kc
+
+Creating turbulence model
+
+Selecting turbulence model type laminar
+Selecting laminar stress model Stokes
+Creating combustion model
+
+Selecting combustion model PaSR
+Selecting chemistry solver 
 {
-    top
-    {
-        type            calculated;
-        value           uniform 0.01;
-    }
-    bottom
-    {
-        type            calculated;
-        value           uniform 0.01;
-    }
-    walls
-    {
-        type            calculated;
-        value           uniform 0.01;
-    }
+    solver          ode;
+    method          standard;
 }
 
+StandardChemistryModel: Number of species = 10 and reactions = 3
+Selecting ODE solver seulex
+    using integrated reaction rate
+Selecting radiationModel P1
+Selecting absorptionEmissionModel binary
+Selecting absorptionEmissionModel constant
+Selecting absorptionEmissionModel bed
+Selecting scatterModel bed
+No finite volume options present
+Courant Number mean: 0.002066115702 max: 0.002066115702
 
-bed number field: dimensions      [0 0 0 0 0 0 0];
+ExecutionTime = 0.01 s  ClockTime = 0 s
 
-internalField   nonuniform List<scalar> 9(600 600 600 600 600 0 600 0 0);
 
-boundaryField
-{
-    top
-    {
-        type            zeroGradient;
-    }
-    bottom
-    {
-        type            zeroGradient;
-    }
-    walls
-    {
-        type            zeroGradient;
-    }
-}
+Starting time loop
 
+Courant Number mean: 0.002066115702 max: 0.002066115702
+deltaT = 0.0002475247525
+DICPCG:  Solving for G, Initial residual = 1, Final residual = 0.002694451937, No Iterations 2
+Time = 0.00089034
 
-bedIDBottom: 2(0 1)
+solveConversion start
 
-bedIDInternal: 1(3)
+solveConversion drying start
 
-chechCollapse: 1
+solveConversion drying w[celli]: 0.098
 
-bedGridColumn: 
-3
-(
-3(0 3 6)
-3(1 4 7)
-3(2 5 8)
-)
-
-
-columnList: 3(0 3 6)
-
-cellj: 3
+solveConversion drying, calcDrying start
 
-this->alpha_[celli]: 0.6826674087
+solveConversion drying, calcDrying  calculated
 
-this->particleNumber_[cellj]: 600
+solveConversion drying, calcDrying  calculated, dMassTot: 5.821261036e-10
 
-celli: 0cellj: 3collapseNumber: 533
+solveConversion drying, calcDrying  calculated, dh start, Tdash: 338.0221663
+ dt: 0.0002475247525
+solveConversion drying calcDrying called
 
-this->particleNumber_: dimensions      [0 0 0 0 0 0 0];
+solveConversion drying start update1 , dWeti: 0.009999999337
 
-internalField   nonuniform List<scalar> 9(600 600 600 600 600 0 600 0 0);
+VpOldcube: 9.999998011e-07rhopcube: 759.2168647dVpcube: 7.667454856e-14
 
-boundaryField
-{
-    top
-    {
-        type            zeroGradient;
-    }
-    bottom
-    {
-        type            zeroGradient;
-    }
-    walls
-    {
-        type            zeroGradient;
-    }
-}
+cbrt(VpOldcube - dVpcube): 0.009999999081
 
+solveConversion drying start update1, sum(dMassDrying)5.821261036e-10 dWet[celli]: 0.009999999081
+solveConversion Devolatilisation start
 
-this->particleNumber_ after: dimensions      [0 0 0 0 0 0 0];
+VpOldcube: 1e-06rhopcube: 759.2182247dVpcube: 1.506803017e-22
 
-internalField   nonuniform List<scalar> 9(1133 600 600 67 600 0 600 0 0);
+cbrt(VpOldcube - dVpcube): 0.01
 
-boundaryField
-{
-    top
-    {
-        type            zeroGradient;
-    }
-    bottom
-    {
-        type            zeroGradient;
-    }
-    walls
-    {
-        type            zeroGradient;
-    }
-}
-
-
-cellj: 6
-
-this->alpha_[celli]: 0.9645645273
+solveConversion Surface reactions start
 
-this->particleNumber_[cellj]: 600
+VpOldcube: 9.999997438e-07rhopcube: 822.0497483dVpcube: 9.867842927e-14
 
-celli: 3cellj: 6collapseNumber: 600
+cbrt(VpOldcube - dVpcube): 0.009999998817
 
-this->particleNumber_: dimensions      [0 0 0 0 0 0 0];
+solveConversion heatTransfer for ash start
 
-internalField   nonuniform List<scalar> 9(1133 600 600 67 600 0 600 0 0);
+solveConversion carrier coupling start
 
-boundaryField
-{
-    top
-    {
-        type            zeroGradient;
-    }
-    bottom
-    {
-        type            zeroGradient;
-    }
-    walls
-    {
-        type            zeroGradient;
-    }
-}
+solveConversion carrier coupling drying start
+ T0Wet[celli] :338.0407347
+solveConversion carrier dMassDrying
+ cid :5
+solveConversion carrier dMassDrying
+ dm :3.492756621e-07
+solveConversion carrier dMassDrying
+ hs :74344.9748
+solveConversion carrier dMassDrying
+ celli :0 rhoTrans(cid)[celli] :3.492756621e-07
+solveConversion carrier dMassDrying
+  this->hsTrans()[celli] :0.0259668903
+solveConversion carrier coupling devo start
+ T0Dry[celli] :338.036836
+solveConversion carrier coupling devo
+ dMassDV :10(0 0 3.266539746e-25 4.324714593e-26 2.24517098e-24 2.020653882e-24 1.168593092e-24 1.647776465e-20 0 0)
+solveConversion carrier coupling SR start
+ T0Char[celli]: 338.0327753
+solveConversion carrier coupling SR
+ dMassSRCarrier :10(0 -5.541420336e-10 0 0 7.621383873e-10 0 0 0 0 0)
+solveConversion carrier coupling radiation start
 
+solveConversion drying start
 
-this->particleNumber_ after: dimensions      [0 0 0 0 0 0 0];
+solveConversion drying w[celli]: 0.098
 
-internalField   nonuniform List<scalar> 9(1133 600 600 667 600 0 0 0 0);
+solveConversion drying, calcDrying start
 
-boundaryField
-{
-    top
-    {
-        type            zeroGradient;
-    }
-    bottom
-    {
-        type            zeroGradient;
-    }
-    walls
-    {
-        type            zeroGradient;
-    }
-}
+solveConversion drying, calcDrying  calculated
 
+solveConversion drying, calcDrying  calculated, dMassTot: 5.821261036e-10
 
-columnList: 3(1 4 7)
+solveConversion drying, calcDrying  calculated, dh start, Tdash: 338.0221663
+ dt: 0.0002475247525
+solveConversion drying calcDrying called
 
-cellj: 4
+solveConversion drying start update1 , dWeti: 0.009999999337
 
-this->alpha_[celli]: 0.6826674087
+VpOldcube: 9.999998011e-07rhopcube: 759.2168647dVpcube: 7.667454856e-14
 
-this->particleNumber_[cellj]: 600
+cbrt(VpOldcube - dVpcube): 0.009999999081
 
-celli: 1cellj: 4collapseNumber: 533
+solveConversion drying start update1, sum(dMassDrying)5.821261036e-10 dWet[celli]: 0.009999999081
+solveConversion Devolatilisation start
 
-this->particleNumber_: dimensions      [0 0 0 0 0 0 0];
-
-internalField   nonuniform List<scalar> 9(1133 600 600 667 600 0 0 0 0);
-
-boundaryField
-{
-    top
-    {
-        type            zeroGradient;
-    }
-    bottom
-    {
-        type            zeroGradient;
-    }
-    walls
-    {
-        type            zeroGradient;
-    }
-}
-
-
-this->particleNumber_ after: dimensions      [0 0 0 0 0 0 0];
-
-internalField   nonuniform List<scalar> 9(1133 1133 600 667 67 0 0 0 0);
-
-boundaryField
-{
-    top
-    {
-        type            zeroGradient;
-    }
-    bottom
-    {
-        type            zeroGradient;
-    }
-    walls
-    {
-        type            zeroGradient;
-    }
-}
-
-
-cellj: 7
-
-this->alpha_[celli]: 0.9645645273
-
-this->particleNumber_[cellj]: 0
-
-columnList: 3(2 5 8)
-
-cellj: 5
-
-this->alpha_[celli]: 0.6826674087
-
-this->particleNumber_[cellj]: 0
-
-cellj: 8
-
-this->alpha_[celli]: 1
-
-this->particleNumber_[cellj]: 0
-
-gravityCollapse: 
-
-alphaBed field: dimensions      [0 0 0 0 0 0 0];
-
-internalField   nonuniform List<scalar> 9(0.4007702901 0.4007702901 0.6826674087 0.647231936 0.9645645273 1 1 1 1);
-
-boundaryField
-{
-    top
-    {
-        type            calculated;
-        value           uniform 0.01;
-    }
-    bottom
-    {
-        type            calculated;
-        value           uniform 0.01;
-    }
-    walls
-    {
-        type            calculated;
-        value           uniform 0.01;
-    }
-}
-
-
-bed number field: dimensions      [0 0 0 0 0 0 0];
-
-internalField   nonuniform List<scalar> 9(1133 1133 600 667 67 0 0 0 0);
-
-boundaryField
-{
-    top
-    {
-        type            zeroGradient;
-    }
-    bottom
-    {
-        type            zeroGradient;
-    }
-    walls
-    {
-        type            zeroGradient;
-    }
-}
+VpOldcube: 1e-06rhopcube: 759.2182247dVpcube: 1.506803017e-22
 
+cbrt(VpOldcube - dVpcube): 0.01
+
+solveConversion Surface reactions start
+
+VpOldcube: 9.999997438e-07rhopcube: 822.0497483dVpcube: 9.867842927e-14
+
+cbrt(VpOldcube - dVpcube): 0.009999998817
+
+solveConversion heatTransfer for ash start
+
+solveConversion carrier coupling start
+
+solveConversion carrier coupling drying start
+ T0Wet[celli] :338.0407404
+solveConversion carrier dMassDrying
+ cid :5
+solveConversion carrier dMassDrying
+ dm :3.492756621e-07
+solveConversion carrier dMassDrying
+ hs :74344.98542
+solveConversion carrier dMassDrying
+ celli :3 rhoTrans(cid)[celli] :3.492756621e-07
+solveConversion carrier dMassDrying
+  this->hsTrans()[celli] :0.02596689401
+solveConversion carrier coupling devo start
+ T0Dry[celli] :338.0368416
+solveConversion carrier coupling devo
+ dMassDV :10(0 0 3.266539746e-25 4.324714593e-26 2.24517098e-24 2.020653882e-24 1.168593092e-24 1.647776465e-20 0 0)
+solveConversion carrier coupling SR start
+ T0Char[celli]: 338.0327825
+solveConversion carrier coupling SR
+ dMassSRCarrier :10(0 -5.541420336e-10 0 0 7.621383873e-10 0 0 0 0 0)
+solveConversion carrier coupling radiation start
+
+solveConversion drying start
+
+solveConversion drying w[celli]: 0.098
+
+solveConversion drying, calcDrying start
+
+solveConversion drying, calcDrying  calculated
+
+solveConversion drying, calcDrying  calculated, dMassTot: 5.821261036e-10
+
+solveConversion drying, calcDrying  calculated, dh start, Tdash: 338.0221663
+ dt: 0.0002475247525
+solveConversion drying calcDrying called
+
+solveConversion drying start update1 , dWeti: 0.009999999337
+
+VpOldcube: 9.999998011e-07rhopcube: 759.2168647dVpcube: 7.667454856e-14
+
+cbrt(VpOldcube - dVpcube): 0.009999999081
+
+solveConversion drying start update1, sum(dMassDrying)5.821261036e-10 dWet[celli]: 0.009999999081
+solveConversion Devolatilisation start
+
+VpOldcube: 1e-06rhopcube: 759.2182247dVpcube: 1.506803017e-22
+
+cbrt(VpOldcube - dVpcube): 0.01
+
+solveConversion Surface reactions start
+
+VpOldcube: 9.999997438e-07rhopcube: 822.0497483dVpcube: 9.867842927e-14
+
+cbrt(VpOldcube - dVpcube): 0.009999998817
+
+solveConversion heatTransfer for ash start
+
+solveConversion carrier coupling start
+
+solveConversion carrier coupling drying start
+ T0Wet[celli] :338.0407442
+solveConversion carrier dMassDrying
+ cid :5
+solveConversion carrier dMassDrying
+ dm :3.492756621e-07
+solveConversion carrier dMassDrying
+ hs :74344.99263
+solveConversion carrier dMassDrying
+ celli :6 rhoTrans(cid)[celli] :3.492756621e-07
+solveConversion carrier dMassDrying
+  this->hsTrans()[celli] :0.02596689653
+solveConversion carrier coupling devo start
+ T0Dry[celli] :338.0368455
+solveConversion carrier coupling devo
+ dMassDV :10(0 0 3.266539746e-25 4.324714593e-26 2.24517098e-24 2.020653882e-24 1.168593092e-24 1.647776465e-20 0 0)
+solveConversion carrier coupling SR start
+ T0Char[celli]: 338.0327873
+solveConversion carrier coupling SR
+ dMassSRCarrier :10(0 -5.541420336e-10 0 0 7.621383873e-10 0 0 0 0 0)
+solveConversion carrier coupling radiation start
+
+solveConversion drying start
+
+solveConversion drying w[celli]: 0.098
+
+solveConversion drying, calcDrying start
+
+solveConversion drying, calcDrying  calculated
+
+solveConversion drying, calcDrying  calculated, dMassTot: 5.821261036e-10
+
+solveConversion drying, calcDrying  calculated, dh start, Tdash: 338.0221663
+ dt: 0.0002475247525
+solveConversion drying calcDrying called
+
+solveConversion drying start update1 , dWeti: 0.009999999337
+
+VpOldcube: 9.999998011e-07rhopcube: 759.2168647dVpcube: 7.667454856e-14
+
+cbrt(VpOldcube - dVpcube): 0.009999999081
+
+solveConversion drying start update1, sum(dMassDrying)5.821261036e-10 dWet[celli]: 0.009999999081
+solveConversion Devolatilisation start
+
+VpOldcube: 1e-06rhopcube: 759.2182247dVpcube: 1.506803017e-22
+
+cbrt(VpOldcube - dVpcube): 0.01
+
+solveConversion Surface reactions start
+
+VpOldcube: 9.999997438e-07rhopcube: 822.0497483dVpcube: 9.867842927e-14
+
+cbrt(VpOldcube - dVpcube): 0.009999998817
+
+solveConversion heatTransfer for ash start
+
+solveConversion carrier coupling start
+
+solveConversion carrier coupling drying start
+ T0Wet[celli] :338.0407422
+solveConversion carrier dMassDrying
+ cid :5
+solveConversion carrier dMassDrying
+ dm :3.492756621e-07
+solveConversion carrier dMassDrying
+ hs :74344.98882
+solveConversion carrier dMassDrying
+ celli :1 rhoTrans(cid)[celli] :3.492756621e-07
+solveConversion carrier dMassDrying
+  this->hsTrans()[celli] :0.0259668952
+solveConversion carrier coupling devo start
+ T0Dry[celli] :338.0368435
+solveConversion carrier coupling devo
+ dMassDV :10(0 0 3.266539746e-25 4.324714593e-26 2.24517098e-24 2.020653882e-24 1.168593092e-24 1.647776465e-20 0 0)
+solveConversion carrier coupling SR start
+ T0Char[celli]: 338.0327847
+solveConversion carrier coupling SR
+ dMassSRCarrier :10(0 -5.541420336e-10 0 0 7.621383873e-10 0 0 0 0 0)
+solveConversion carrier coupling radiation start
+
+solveConversion drying start
+
+solveConversion drying w[celli]: 0.098
+
+solveConversion drying, calcDrying start
+
+solveConversion drying, calcDrying  calculated
+
+solveConversion drying, calcDrying  calculated, dMassTot: 5.821261036e-10
+
+solveConversion drying, calcDrying  calculated, dh start, Tdash: 338.0221663
+ dt: 0.0002475247525
+solveConversion drying calcDrying called
+
+solveConversion drying start update1 , dWeti: 0.009999999337
+
+VpOldcube: 9.999998011e-07rhopcube: 759.2168647dVpcube: 7.667454856e-14
+
+cbrt(VpOldcube - dVpcube): 0.009999999081
+
+solveConversion drying start update1, sum(dMassDrying)5.821261036e-10 dWet[celli]: 0.009999999081
+solveConversion Devolatilisation start
+
+VpOldcube: 1e-06rhopcube: 759.2182247dVpcube: 1.506803017e-22
+
+cbrt(VpOldcube - dVpcube): 0.01
+
+solveConversion Surface reactions start
+
+VpOldcube: 9.999997438e-07rhopcube: 822.0497483dVpcube: 9.867842927e-14
+
+cbrt(VpOldcube - dVpcube): 0.009999998817
+
+solveConversion heatTransfer for ash start
+
+solveConversion carrier coupling start
+
+solveConversion carrier coupling drying start
+ T0Wet[celli] :338.0407372
+solveConversion carrier dMassDrying
+ cid :5
+solveConversion carrier dMassDrying
+ dm :3.492756621e-07
+solveConversion carrier dMassDrying
+ hs :74344.97945
+solveConversion carrier dMassDrying
+ celli :4 rhoTrans(cid)[celli] :3.492756621e-07
+solveConversion carrier dMassDrying
+  this->hsTrans()[celli] :0.02596689192
+solveConversion carrier coupling devo start
+ T0Dry[celli] :338.0368384
+solveConversion carrier coupling devo
+ dMassDV :10(0 0 3.266539746e-25 4.324714593e-26 2.24517098e-24 2.020653882e-24 1.168593092e-24 1.647776465e-20 0 0)
+solveConversion carrier coupling SR start
+ T0Char[celli]: 338.0327784
+solveConversion carrier coupling SR
+ dMassSRCarrier :10(0 -5.541420336e-10 0 0 7.621383873e-10 0 0 0 0 0)
+solveConversion carrier coupling radiation start
+
+solveConversion drying start
+
+solveConversion drying w[celli]: 0.098
+
+solveConversion drying, calcDrying start
+
+solveConversion drying, calcDrying  calculated
+
+solveConversion drying, calcDrying  calculated, dMassTot: 5.821261036e-10
+
+solveConversion drying, calcDrying  calculated, dh start, Tdash: 338.0221663
+ dt: 0.0002475247525
+solveConversion drying calcDrying called
+
+solveConversion drying start update1 , dWeti: 0.009999999337
+
+VpOldcube: 9.999998011e-07rhopcube: 759.2168647dVpcube: 7.667454856e-14
+
+cbrt(VpOldcube - dVpcube): 0.009999999081
+
+solveConversion drying start update1, sum(dMassDrying)5.821261036e-10 dWet[celli]: 0.009999999081
+solveConversion Devolatilisation start
+
+VpOldcube: 1e-06rhopcube: 759.2182247dVpcube: 1.506803017e-22
+
+cbrt(VpOldcube - dVpcube): 0.01
+
+solveConversion Surface reactions start
+
+VpOldcube: 9.999997438e-07rhopcube: 822.0497483dVpcube: 9.867842927e-14
+
+cbrt(VpOldcube - dVpcube): 0.009999998817
+
+solveConversion heatTransfer for ash start
+
+solveConversion carrier coupling start
+
+solveConversion carrier coupling drying start
+ T0Wet[celli] :338.040728
+solveConversion carrier dMassDrying
+ cid :5
+solveConversion carrier dMassDrying
+ dm :3.492756621e-07
+solveConversion carrier dMassDrying
+ hs :74344.96233
+solveConversion carrier dMassDrying
+ celli :2 rhoTrans(cid)[celli] :3.492756621e-07
+solveConversion carrier dMassDrying
+  this->hsTrans()[celli] :0.02596688594
+solveConversion carrier coupling devo start
+ T0Dry[celli] :338.0368293
+solveConversion carrier coupling devo
+ dMassDV :10(0 0 3.266539746e-25 4.324714593e-26 2.24517098e-24 2.020653882e-24 1.168593092e-24 1.647776465e-20 0 0)
+solveConversion carrier coupling SR start
+ T0Char[celli]: 338.0327669
+solveConversion carrier coupling SR
+ dMassSRCarrier :10(0 -5.541420336e-10 0 0 7.621383873e-10 0 0 0 0 0)
+solveConversion carrier coupling radiation start
+
+solveConversion componentUpdate start
+
+solveConversion momentum transfer start
+
+solveConversion called
 
 End
 

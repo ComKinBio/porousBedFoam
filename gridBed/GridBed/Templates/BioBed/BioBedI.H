@@ -387,10 +387,12 @@ inline Foam::scalar Foam::BioBed<BedType>::dpAfterShrink
 ) const
 {
     const scalar VpOldcube = pow3(dp);
+
     const scalar rhopcube = mass/VpOldcube;
     
     const scalar dVpcube = dmass/rhopcube*shrinkage;
-    
+ Info<<"VpOldcube: "<<VpOldcube <<"rhopcube: "<<rhopcube <<"dVpcube: "<< dVpcube<<nl<<endl;  
+ Info<<"cbrt(VpOldcube - dVpcube): "<< cbrt(VpOldcube - dVpcube)<<nl<<endl;  
     return cbrt(VpOldcube - dVpcube);
 }
 

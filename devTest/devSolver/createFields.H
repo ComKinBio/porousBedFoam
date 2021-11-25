@@ -91,6 +91,9 @@ surfaceScalarField phic
 
 #include "createMRF.H"
 #include "createBed.H"
+
+const word bedName = bioBed.bedName();
+
 mesh.setFluxRequired(p.name());
 
 volScalarField Qdot
@@ -144,7 +147,7 @@ alphac = max(1.0 - bioBed.beta(), alphacMin);
 alphac.correctBoundaryConditions();
 
 surfaceScalarField alphacf("alphaf", fvc::interpolate(alphac));
-Info<<"alphacf: "<<alphacf<<endl;
+
 surfaceScalarField rhocPhic
 (
     IOobject
@@ -194,3 +197,60 @@ autoPtr<CombustionModel<psiReactionThermo>> combustion
 
 #include "createRadiationModel.H"
 #include "createFvOptions.H"
+
+IOdictionary radiationDict
+(
+    IOobject
+    (
+        "radiationProperties",
+        runTime.constant(),
+        mesh,
+        IOobject::READ_IF_PRESENT,
+        IOobject::NO_WRITE
+    )
+);
+
+label radiationsolverFreq = radiationDict.lookupOrDefault<label>("solverFreq", 1);
+radiationsolverFreq = max(1, radiationsolverFreq);
+
+volScalarField bedap
+(
+    IOobject
+    (
+        bedName + ".ap",
+        runTime.timeName(),
+        mesh,
+        IOobject::READ_IF_PRESENT,
+        IOobject::AUTO_WRITE
+    ),
+    mesh,
+    dimensionedScalar(dimless/dimLength, 0)
+);
+
+volScalarField bedEp
+(
+    IOobject
+    (
+        bedName + ".Ep",
+        runTime.timeName(),
+        mesh,
+        IOobject::READ_IF_PRESENT,
+        IOobject::AUTO_WRITE
+    ),
+    mesh,
+    dimensionedScalar(dimMass/dimLength/pow3(dimTime), 0)
+);
+
+volScalarField bedsigmap
+(
+    IOobject
+    (
+        bedName + ".sigmap",
+        runTime.timeName(),
+        mesh,
+        IOobject::READ_IF_PRESENT,
+        IOobject::AUTO_WRITE
+    ),
+    mesh,
+    dimensionedScalar(dimless/dimLength, 0)
+);

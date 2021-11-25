@@ -157,7 +157,7 @@ Foam::bioBedFields::bioBedFields
             (
                 bioProperties_,
                 epsilon0name,
-                0.0
+                0.8
             )
         );
     
@@ -168,7 +168,7 @@ Foam::bioBedFields::bioBedFields
             (
                 bioProperties_,
                 f0name,
-                0.0
+                0.5
             )
         );
     
@@ -326,7 +326,11 @@ Foam::bioBedFields::bioBedFields
     }
     
     ash_porosity() = dimensionedScalar(dimless, ashFixedPorosity_.value());
-    dpe(ash_) = dpe(ash_)/cbrt(ash_porosity());
+
+    w_percent() = moisture();
+
+//debug
+    Info<<"bioBedFields constructor called here"<<nl<<endl;
 }
 
 

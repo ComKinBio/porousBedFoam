@@ -120,14 +120,95 @@ Foam::BioBed<BedType>::BioBed
     devolatilisationModel_(nullptr),
     surfaceReactionModel_(nullptr),
     massExplicit_(true),
-    speciesExplicit_(true)
+    speciesExplicit_(true),
+    randomConvesion_(false),
+    rhoTrans_(thermo.carrier().species().size())
 {
+    Istream& isM = this->subModelProperties_.lookup("MassSource");
+    const word schemeM(isM);
+    if (schemeM == "semiImplicit")
+    {
+         massExplicit_ = false;
+    }
+    else if (schemeM == "explicit")
+    {
+        massExplicit_ = true;
+    }
+    else
+    {
+        FatalErrorInFunction
+            << "Invalid scheme " << schemeM << ". Valid schemes are "
+            << "explicit and semiImplicit" << exit(FatalError);
+    }
+
+    Istream& isS = this->subModelProperties_.lookup("SpeciesSource");
+    const word schemeS(isS);
+    if (schemeS == "semiImplicit")
+    {
+         speciesExplicit_ = false;
+    }
+    else if (schemeS == "explicit")
+    {
+        speciesExplicit_ = true;
+    }
+    else
+    {
+        FatalErrorInFunction
+            << "Invalid scheme " << schemeS << ". Valid schemes are "
+            << "explicit and semiImplicit" << exit(FatalError);
+    }
+    
+    
     for (const auto e : bedComponents)
     {
-        dp2nde(e) = dpe(e)/sqrt(this->sphericity());
+        word name(particlePhaseNames_[e]);
+        word dp2ndname = "dp2nd_" + name;
+
+        wordList wrdList(2);
+        wrdList[0] = mesh_.time().timeName();
+        wrdList[1] = IOobject::groupName(bedName, dp2ndname);
+
+        fileName dp2ndnameFileName(wrdList);
+
+        if (!exists(dp2ndnameFileName))
+        {
+            dp2nde(e) = dpe(e)/sqrt(this->sphericity());
+        }
+    }
+
+    // Set storage for mass source fields and initialise to zero
+    forAll(rhoTrans_, i)
+    {
+        const word& specieName = thermo.carrier().species()[i];
+        rhoTrans_.set
+        (
+            i,
+            new volScalarField::Internal
+            (
+                IOobject
+                (
+                    bedName + ":rhoTrans_" + specieName,
+                    mesh.time().timeName(),
+                    mesh,
+                    IOobject::READ_IF_PRESENT,
+                    IOobject::AUTO_WRITE
+                ),
+                this->mesh(),
+                dimensionedScalar(dimMass, 0)
+            )
+        );
     }
     
     setModels();
+       
+    componentUpdate();
+    
+    this->updateBedList();
+    
+    this->alphaCalc();
+    
+//debug
+    Info<<"BioBed Constructor called"<<nl<<endl;
 }
 
 // * * * * * * * * * * * * * * * Main Function  * * * * * * * * * * * * * //
@@ -148,7 +229,7 @@ void Foam::BioBed<BedType>::solveConversion()
 template<class BedType>
 void Foam::BioBed<BedType>::componentUpdate()
 {
-    //- update total particle number
+
     tmp<volScalarField> tparticleNumber
     (
         volScalarField::New
@@ -160,12 +241,11 @@ void Foam::BioBed<BedType>::componentUpdate()
     );
 
     scalarField& numberRef = tparticleNumber.ref();
+
     for (const auto e : bedComponents)
     {
         numberRef += particleNumbere(e);
     }
-    this->particleNumber() = tparticleNumber;
-    
     
     //- update particle average diameter
     tmp<volScalarField> tdp
@@ -187,6 +267,10 @@ void Foam::BioBed<BedType>::componentUpdate()
     {
         if (numberRef[i]>0)
         {
+// //debug
+//     Info<<"componentUpdate "<<nl<<" dpRef[i] :"<<dpRef[i]
+//         <<" numberRefsaved[i] :"<<numberRefsaved[i]
+//         <<" numberRef[i] :"<<numberRef[i]<<endl; 
             dpRef[i] = cbrt(dpRef[i]/numberRef[i]);
         }
         else
@@ -194,9 +278,7 @@ void Foam::BioBed<BedType>::componentUpdate()
             dpRef[i] = dp0e(wet_);
         }
     }
-    this->dp() = tdp;
-    
-    
+  
     //- update particle average diameter2
     tmp<volScalarField> tdp2
     (
@@ -224,8 +306,6 @@ void Foam::BioBed<BedType>::componentUpdate()
             dp2Ref[i] = dp0e(wet_);
         }
     }
-    this->dp2nd() = tdp2;
-    
     
     //- update particle average rhop
     tmp<volScalarField> tmass
@@ -261,21 +341,20 @@ void Foam::BioBed<BedType>::componentUpdate()
             )
         )
     );
+    
     scalarField& trhopRef = trhop.ref();
     forAll(trhopRef,i)
     {
         if (numberRef[i]>0)
         {
-            trhopRef[i] = tmassRef[i]/this->volume(dpRef[i]);
+            trhopRef[i] = tmassRef[i]/this->volume(numberRef[i]);
         }
         else
         {
-            trhopRef[i] = this->rhop0();
+            trhopRef[i] = 0;
         }
     }
-    this->rhop() = trhop;
     
-
     //- update particle average Cp
     tmp<volScalarField> tCp
     (
@@ -307,8 +386,6 @@ void Foam::BioBed<BedType>::componentUpdate()
             tCpRef[i] = this->Cp0();
         }
     }
-    this->bedCp() = tCp;
-    
     
     //- update particle average kp
     tmp<volScalarField> tkp
@@ -341,8 +418,6 @@ void Foam::BioBed<BedType>::componentUpdate()
             tkpRef[i] = this->kp0();
         }
     }
-    this->bedKp() = tkp;
-    
     
     //- update particle average Tp
     tmp<volScalarField> tTp
@@ -371,7 +446,17 @@ void Foam::BioBed<BedType>::componentUpdate()
             tTpRef[i] = this->Tc()[i];
         }
     }
+    
+    
+    this->particleNumber() = tparticleNumber;
+    this->dp() = tdp;
+    this->dp2nd() = tdp2;
+    this->rhop() = trhop;
+    this->bedCp() = tCp;
+    this->bedKp() = tkp;
     this->bedT() = tTp;
+    
+    tmass.clear();
     
     this->alphaCalc();
 }

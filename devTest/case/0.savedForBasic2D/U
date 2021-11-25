@@ -2,52 +2,51 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Version:  7  
+    \\  /    A nd           | Version:  7
      \\/     M anipulation  |
 \*---------------------------------------------------------------------------*/
 FoamFile
 {
     version     2.0;
     format      ascii;
-    class       dictionary;
-    location    "constant";
-    object      radiationProperties;
+    class       volVectorField;
+    location    "0";
+    object      U;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-solverFreq      1;
+dimensions      [0 1 -1 0 0 0 0];
 
-radiationModel  P1;
-
-absorptionEmissionModel binary;
-
-binaryCoeffs
+internalField   nonuniform List<vector>
+9
+(
+(0 1 0)
+(0 1 0)
+(0 1 0)
+(0 1 0)
+(0 1 0)
+(0 1 0)
+(0 1 0)
+(0 1 0)
+(0 1 0)
+)
+;
+boundaryField
 {
-    model1
+    walls
     {
-        absorptionEmissionModel constant;
-        constantCoeffs
-        {
-            absorptivity    0.5;
-            emissivity      0.5;
-            E               0;
-        }
+        type            noSlip;
     }
-    model2
+    bottom
     {
-        absorptionEmissionModel bed;
-        bedCoeffs
-        {
-            bedName bioBed;
-        }
+        type            fixedValue;
+        value           uniform (0 1 0);
     }
-}
-
-scatterModel    bed;
-
-bedCoeffs
-{
-    bedName bioBed;
+    top
+    {
+        type            pressureInletOutletVelocity;
+        value           uniform (0 1 0);
+    }
 }
 
 

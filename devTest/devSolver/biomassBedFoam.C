@@ -76,6 +76,8 @@ int main(int argc, char *argv[])
         << nl << endl;
 
     Info<< "\nStarting time loop\n" << endl;
+    
+    bool solverFirstIter = true;
 /*
     while (runTime.run())
     {
@@ -146,15 +148,39 @@ int main(int argc, char *argv[])
     }
         
 */    
+    runTime.run();  
+    
+    #include "readTimeControls.H"
+
+    if (LTS)
+    {
+        #include "setRDeltaT.H"
+    }
+    else
+    {
+        #include "compressibleCourantNo.H"
+        #include "setDeltaT.H"
+    }
+    
+    runTime++;
+    
+    if (solverFirstIter || (runTime.timeIndex() % radiationsolverFreq == 0))
+    {
+        solverFirstIter = false;
         
-        
+        bedap = bioBed.ap();
+        bedEp  = bioBed.Ep();
+        bedsigmap = bioBed.sigmap();
+    }
+    
+    radiation->correct();
+     
+    
+    Info<< "Time = " << runTime.timeName() << nl << endl;
         
     bioBed.solveConversion();     
-        
-        
-        
-        
-        
+    
+    runTime.write();    
         
         
     Info<< "End\n" << endl;

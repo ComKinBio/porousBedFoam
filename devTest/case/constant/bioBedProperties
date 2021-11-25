@@ -25,17 +25,57 @@ bedSettings
 }
 
 
-
 particleProperties
 {
-    rhop    1030;// add
+    rhop0           1450;// add
+    T0              338;// add
+    Cp0             1500;// add
+    kp0             0.13;// add
+    epsilon0        0.8;//particle emissivity []
+    f0              0.5;
     
+    sphericity      0.8;
     
-    active          true;
-    transient       yes;
-    coupled         true;
-    cellValueSourceCorrection on;
+    moisture        0.098;
+    
+    ashContent      0.06; //char based, a constant char yield is required
+    
+    //wet
+    wet_rhop           1450;// add
+    wet_T0            338;// add
+    wet_Cp0           1500;// add
+    wet_kp0         0.13;// add
+    wet_epsilon0        1;//
+    wet_dp0           0.01;// add
+//     wet_registeredRatio_
+    
+    //dry
+    dry_rhop           1450;// add
+    dry_T0            338;// add
+    dry_Cp0           1500;// add
+    dry_kp0         0.1;// add
+    dry_epsilon0        1;//
+    dry_dp0           0.01;// add
+    
+    //char
+    char_rhop           1570;// add
+    char_T0            338;// add
+    char_Cp0           1100;// add
+    char_kp0         0.06;// add
+    char_epsilon0        1;//
+    char_dp0           0.01;// add
+    
+    //ash
+    ash_rhop           2000;// add
+    ash_T0            338;// add
+    ash_Cp0           1000;// add
+    ash_kp0         0.4;// add
+    ash_epsilon0        1;//
+    ash_dp0           0.01;// add
+    
+    ashFixedPorosity    0.65;
 
+    //particleNumber_e need to be initialized by patching
     
 }
 
@@ -44,17 +84,11 @@ constantProperties
     TMin            273;
     pMin            1000;
     minParticleMass 1e-15;
-
-    rho0            7810;// add
-    T0              338;// add
-    Cp0             553;// add
-    kp0             40.1;// add
-    epsilon0        0.8;//particle emissivity []
-    f0              0.5;
+    
+    alphaMin        0.05;
 
     Pr              0.7;
     constantVolume  false; // add
-
     
     deltaTime 1e-4;
     
@@ -70,9 +104,15 @@ collapseSetting
 
 subModels
 {
+    radiation       on;
+    
     MomentumSource explicit;
     
     HeatSource explicit;
+    
+    MassSource explicit;
+    
+    SpeciesSource explicit;
     
     integrationSchemes
     {
@@ -95,21 +135,13 @@ subModels
     
     massTransferModel RanzMarshall;
 
-    compositionModel singleMixtureFraction;
 
     dryingModel liquidEvaporation;
 
     devolatilisationModel DiBlasiDevolatilisation;
 
-    surfaceReactionModel none;
+    surfaceReactionModel COxidationKineticDiffusionLimitedRate;
     
-    pyrolysisModel DiBlasiPyrolysis; //add
-
-    charOxidizationModel COxidationKineticDiffusionLimitedRateWithAshSteam; //add
-
-    surfaceFilmModel none;
-
-    radiation       on;
 
     
     RanzMarshallCoeffs
@@ -117,35 +149,6 @@ subModels
         BirdCorrection  false;
     }
 
-    singleMixtureFractionCoeffs
-    {
-        phases
-        (
-            gas // number doesn't mean any thing
-            {
-                CH4             0.1;
-                H2              0.1;
-                CO2             0.1;
-                CO              0.1;
-                H2O             0.1;
-                tar             0.5;
-            }
-            liquid
-            {
-                H2O             1.0;
-            }
-            solid
-            {
-                wood             0.9634; //name must be the wood, consume with H2O
-                activeDryWood    0.0; // dry wood can devo
-                C                0.0;  //name must be the C
-                ash              0.0366; 
-            }
-        );
-        YGasTot0        0.0;
-        YLiquidTot0     0.098;
-        YSolidTot0      0.902;
-    }
 
     liquidEvaporationCoeffs
     {
@@ -179,6 +182,14 @@ subModels
         residualCoeff   1E-06;
         
         secondReaction true;
+    }
+    
+    COxidationKineticDiffusionLimitedRateCoeffs
+    {
+        Sb              1;
+        C1              5.0E-12;
+        C2              0.002;
+        E               7.9E+07;
     }
 
     

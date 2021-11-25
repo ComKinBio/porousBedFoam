@@ -130,11 +130,11 @@ inline Foam::ThermoBed<BedType>::ThermoBed
     kappac_(thermo.thermo().kappa()),
     TMin_(this->constProperties_, 0.0),
     TMax_(this->constProperties_, vGreat),
-    T0_(this->constProperties_, 0.0),
-    Cp0_(this->constProperties_, 0.0),
-    kp0_(this->constProperties_, 0.0),
-    epsilon0_(this->constProperties_, 0.0),
-    f0_(this->constProperties_, 0.0),
+    T0_(this->particleProperties_, 0.0),
+    Cp0_(this->particleProperties_, 0.0),
+    kp0_(this->particleProperties_, 0.0),
+    epsilon0_(this->particleProperties_, 0.0),
+    f0_(this->particleProperties_, 0.0),
     bedT_
     (
         IOobject
@@ -232,6 +232,8 @@ inline Foam::ThermoBed<BedType>::ThermoBed
             << "explicit and semiImplicit" << exit(FatalError);
     }
     
+    this->subModelProperties_.lookup("radiation") >> radiation_;
+
     setModels();
 }
 
@@ -477,12 +479,4 @@ void Foam::ThermoBed<BedType>::solveHeat(const scalar dt)
     }
 } 
  
- 
- 
- 
-
-
-
-
-
 // ************************************************************************* //

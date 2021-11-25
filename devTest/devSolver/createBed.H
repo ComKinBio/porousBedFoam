@@ -2,7 +2,7 @@ Info<< "\nConstructing fuel bed" << endl;
 
 basicGravityBio2DBed bioBed
 (
-    "bed2d",
+    "bioBed",
     mesh,
     rhoc,
     Uc,

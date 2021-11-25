@@ -1,9 +1,9 @@
 /*--------------------------------*- C++ -*----------------------------------*\
-  =========                 |
-  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Version:  7  
-     \\/     M anipulation  |
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v1806                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
 FoamFile
 {
@@ -32,12 +32,28 @@ solvers
         relTol          0;
     }
 
+//     p
+//     {
+//         solver          GAMG;
+//         tolerance       1e-06;
+//         relTol          0.01;
+//         smoother        GaussSeidel;
+//     }
     p
     {
-        solver          GAMG;
-        tolerance       1e-06;
+        solver          PCG;
+        preconditioner  DIC;
+        tolerance       1e-6;
         relTol          0.01;
-        smoother        GaussSeidel;
+    }
+    Ii
+    {
+        solver              GAMG;
+        tolerance           1e-4;
+        relTol              0;
+        smoother            symGaussSeidel;
+        maxIter             5;
+        nPostSweeps         1;
     }
 
     pFinal
@@ -47,40 +63,54 @@ solvers
         relTol          0;
     }
 
-    "(U|h|R|k|epsilon)"
+    "(U|h|k|epsilon)"
     {
-        solver          smoothSolver;
-        smoother        symGaussSeidel;
-        tolerance       1e-05;
+        solver          PBiCGStab;
+        preconditioner  DILU;
+        tolerance       1e-6;
         relTol          0.1;
     }
 
-    "(U|h|R|k|epsilon)Final"
+    "(U|h|k|epsilon)Final"
     {
         $U;
-        tolerance       1e-05;
-        relTol          0;
     }
 
-    "(Yi|CO2|O2|N2|CH4|H2|H2O|CO)"
+//     Yi
+//     {
+//         solver          PBiCG;
+//         preconditioner  DILU;
+//         tolerance       1e-8;
+//         relTol          0.1;
+//     }
+    "(Yi|CO2|O2|N2|CH4|H2|H2O|CO|tar|C2H4|C2H6|YSoot|IiFinal|NSoot)"
     {
-        $h;
+        solver          PBiCGStab;
+        preconditioner  DILU;
+        tolerance       1e-7;
+        relTol          0.1;
     }
-
-    "(Yi|CO2|O2|N2|CH4|H2|H2O|CO)Final"
+    "(Yi|CO2|O2|N2|CH4|H2|H2O|CO|tar|C2H4|C2H6|YSoot|IiFinal|NSoot)Final"
     {
-        $Yi;
-        tolerance       1e-06;
+        solver          PBiCGStab;
+        preconditioner  DILU;
+        tolerance       1e-7;
         relTol          0;
     }
 }
 
 PIMPLE
 {
-    transonic       yes;
-    nCorrectors     3;
+//     transonic       no;
+//     nCorrectors     3;
+//     nNonOrthogonalCorrectors ;
+//     momentumPredictor yes;
+//     
+    momentumPredictor   yes;
+    transonic no;
+    nOuterCorrectors    1;
+    nCorrectors         2;
     nNonOrthogonalCorrectors 0;
-    momentumPredictor yes;
 }
 
 
