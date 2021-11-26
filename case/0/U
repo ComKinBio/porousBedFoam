@@ -17,35 +17,33 @@ FoamFile
 
 dimensions      [0 1 -1 0 0 0 0];
 
-internalField   nonuniform List<vector>
-9
-(
-(0 1 0)
-(0 1 0)
-(0 1 0)
-(0 1 0)
-(0 1 0)
-(0 1 0)
-(0 1 0)
-(0 1 0)
-(0 1 0)
-)
-;
+internalField   uniform (0 0.5 0);
+
 boundaryField
 {
     walls
     {
         type            noSlip;
     }
+    
     bottom
     {
-        type            fixedValue;
-        value           uniform (0 1 0);
+        type            interstitialInletVelocity;
+        inletVelocity   uniform (0 0.5 0);
+        value           uniform (0 0.5 0);
+        phi             alphaRhoPhi;
+        alpha           alpha;
     }
+    
     top
     {
         type            pressureInletOutletVelocity;
-        value           uniform (0 1 0);
+        value           $internalField;
+    }
+    
+    frontAndBack
+    {
+        type            symmetry;
     }
 }
 

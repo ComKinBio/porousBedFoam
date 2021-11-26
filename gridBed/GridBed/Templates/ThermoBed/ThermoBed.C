@@ -128,13 +128,13 @@ inline Foam::ThermoBed<BedType>::ThermoBed
     pc_(thermo.thermo().p()),
     Cpc_(thermo.thermo().Cp()),
     kappac_(thermo.thermo().kappa()),
-    TMin_(this->constProperties_, 0.0),
-    TMax_(this->constProperties_, vGreat),
-    T0_(this->particleProperties_, 0.0),
-    Cp0_(this->particleProperties_, 0.0),
-    kp0_(this->particleProperties_, 0.0),
-    epsilon0_(this->particleProperties_, 0.0),
-    f0_(this->particleProperties_, 0.0),
+    TMin_(this->constProperties_, "TMin", 0.0),
+    TMax_(this->constProperties_, "TMax", vGreat),
+    T0_(this->particleProperties_, "T0", 0.0),
+    Cp0_(this->particleProperties_, "Cp0", 0.0),
+    kp0_(this->particleProperties_, "kp0", 0.0),
+    epsilon0_(this->particleProperties_, "epsilon0", 0.0),
+    f0_(this->particleProperties_, "f0", 0.0),
     bedT_
     (
         IOobject

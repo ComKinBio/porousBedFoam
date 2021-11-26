@@ -42,6 +42,10 @@ boundaryField
         emissivity      uniform 1;
         value           uniform 0;
     }
+    frontAndBack
+    {
+        type            symmetry;
+    }
 }
 
 

@@ -34,8 +34,8 @@ tmp<fv::convectionScheme<scalar>> mvConvection
                     Yi
                 )
               ==
-                bioBed.SYi(i, Yi)
-              + combustion->R(Yi)
+                combustion->R(Yi)
+              + bioBed.SYi(i, Yi)
               + fvOptions(rhoc, Yi)
             );
 

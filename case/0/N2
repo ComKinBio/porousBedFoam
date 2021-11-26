@@ -33,8 +33,12 @@ boundaryField
     top
     {
         type            inletOutlet;
-        inletValue      uniform 0.77;
-        value           uniform 0.77;
+        inletValue      uniform 1;
+        value           uniform 1;
+    }
+    frontAndBack
+    {
+        type            symmetry;
     }
 }
 

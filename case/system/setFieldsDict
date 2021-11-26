@@ -1,0 +1,49 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  7  
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      setFieldsDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+regions
+(
+    boxToCell
+    {
+        box (-0.01 -0.01 -0.01) (0.31 0.41 0.1);//initialBed
+        fieldValues
+        (
+            volScalarFieldValue bioBed.particleNumber_wet 18
+        );
+    }
+    
+    boxToCell
+    {
+        box (-0.01 0.375 -0.01) (0.35 0.40 0.1);//initialchar
+        fieldValues
+        (
+            volScalarFieldValue bioBed.particleNumber_char 4
+        );
+    }
+    
+    boxToCell
+    {
+        box (-0.01 0.40 -0.01) (0.35 0.425 0.1);//initialchar
+        fieldValues
+        (
+            volScalarFieldValue bioBed.particleNumber_char 20
+        );
+    }
+);
+
+
+// ************************************************************************* //

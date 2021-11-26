@@ -98,8 +98,7 @@ int main(int argc, char *argv[])
         Info<< "Time = " << runTime.timeName() << nl << endl;
         
         pDyn = 0.5*rhoc*magSqr(Uc);
-        
-            
+       
         Info<< "Solve the bed model"
             << "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
             << "  ClockTime = " << runTime.elapsedClockTime() << " s"
@@ -119,7 +118,8 @@ int main(int argc, char *argv[])
         alphacf = fvc::interpolate(alphac);
         alphaRhoPhic = alphacf*rhocPhic;
         
-        if (solverFirstIter || (runTime.timeIndex() % radiationsolverFreq == 0))
+        if (bioBed.radiation() && 
+            (solverFirstIter || (runTime.timeIndex() % radiationsolverFreq == 0)))
         {
             solverFirstIter = false;
             

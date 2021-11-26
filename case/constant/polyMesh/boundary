@@ -15,28 +15,35 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-3
+4
 (
-    top
-    {
-        type            wall;
-        inGroups        List<word> 1(wall);
-        nFaces          3;
-        startFace       12;
-    }
     bottom
     {
         type            wall;
         inGroups        List<word> 1(wall);
-        nFaces          3;
-        startFace       15;
+        nFaces          12;
+        startFace       540;
+    }
+    top
+    {
+        type            wall;
+        inGroups        List<word> 1(wall);
+        nFaces          12;
+        startFace       552;
     }
     walls
     {
         type            wall;
         inGroups        List<word> 1(wall);
-        nFaces          24;
-        startFace       18;
+        nFaces          48;
+        startFace       564;
+    }
+    frontAndBack
+    {
+        type            symmetry;
+        inGroups        List<word> 1(symmetry);
+        nFaces          576;
+        startFace       612;
     }
 )
 

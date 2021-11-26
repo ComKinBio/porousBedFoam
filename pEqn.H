@@ -29,8 +29,8 @@ if (pimple.transonic())
           + fvm::div(alphacf*phid, p)
           - fvm::laplacian(alphacf*alphacf*rhocrAUcf, p)
          ==
-            bioBed.Srho()
-          + fvOptions(psi, p, rhoc.name())
+            fvOptions(psi, p, rhoc.name())
+          + bioBed.Srho()
         );
 
         pEqn.solve();
@@ -71,8 +71,8 @@ else
           + fvc::div(alphacf*phiHbyA)
           - fvm::laplacian(alphacf*alphacf*rhocrAUcf, p)
          ==
-            bioBed.Srho()
-          + fvOptions(psi, p, rhoc.name())
+            fvOptions(psi, p, rhoc.name())
+          + bioBed.Srho()
         );
 
         pEqn.solve();

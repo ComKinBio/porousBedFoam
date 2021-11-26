@@ -35,8 +35,8 @@ Description
         fvm::ddt(alphac, rhoc)
       + fvc::div(alphaRhoPhic)
       ==
-        bioBed.Srho(rhoc)
-      + fvOptions(rhoc)
+        fvOptions(rhoc)
+      + bioBed.Srho(rhoc)
     );
 
     rhocEqn.solve();
