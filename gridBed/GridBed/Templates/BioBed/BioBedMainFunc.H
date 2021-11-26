@@ -209,7 +209,7 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                                   + cpWet[celli]*mass0Wet[celli]*(1-w[celli]));
                     
                     dWet[celli] = 
-                        dpAfterShrink(dWeti, mass0Wet[celli]/npWeti, sum(dMassDrying)/w[celli], shrinkageFactorAlpha());
+                        dpAfterShrink(dWeti, mass0Wet[celli]/npWeti, sum(dMassDrying)/moisture(), shrinkageFactorAlpha());
                     d2ndWet[celli] = dWet[celli]/sqrt(this->sphericity());
 
                     dDry[celli] = cbrt((pow3(dDry[celli])*npDry[celli] + pow3(dWet[celli])*npWeti)\
@@ -231,7 +231,7 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                 else
                 {
                     dWet[celli] = 
-                        dpAfterShrink(dWeti, mass0Wet[celli]/npWeti, sum(dMassDrying)/w[celli], shrinkageFactorAlpha());
+                        dpAfterShrink(dWeti, mass0Wet[celli]/npWeti, sum(dMassDrying)/moisture(), shrinkageFactorAlpha());
                     d2ndWet[celli] = dWet[celli]/sqrt(this->sphericity());
                     mass0Wet[celli] -= sum(dMassDrying)*npWeti;
                     w[celli] = (mass0Wateri - sum(dMassDrying)*npWeti)/mass0Wet[celli];

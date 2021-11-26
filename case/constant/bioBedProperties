@@ -142,7 +142,7 @@ subModels
 
     dryingModel liquidEvaporation;
 
-    devolatilisationModel DiBlasiDevolatilisation;
+    devolatilisationModel StromNFDDevolatilisation;//DiBlasiDevolatilisation
 
     surfaceReactionModel COxidationKineticDiffusionLimitedRate;
     
@@ -186,6 +186,27 @@ subModels
         residualCoeff   1E-06;
         
         secondReaction true;
+    }
+    
+    StromNFDDevolatilisationCoeffs
+    {
+        // Wagenaar 1994
+        devolKinetic1     (1.30E+08 1.4E+08 ); // (A1 E1 ) wood gas1
+        devolKinetic2     (2.0E+08 1.33E+08 ); // (A2 E2 ) wood tar
+        devolKinetic3     (1.08E+07 1.21E+08 ); // (A3 E3 ) wood char
+        
+        volgas //light gas
+        (
+            
+            (H2      0.03)   // (name weight_fraction )
+            (CO      0.55)   // (name weight_fraction)
+            (CH4     0.09)   // (name weight_fraction)
+            (CO2     0.18)  // (name weight_fraction)
+            (H2O     0.15 ) // (name weight_fraction)
+        );
+        
+        residualCoeff   1E-06;
+
     }
     
     COxidationKineticDiffusionLimitedRateCoeffs

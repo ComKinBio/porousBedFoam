@@ -166,7 +166,7 @@ Foam::BioBed<BedType>::BioBed
 
         wordList wrdList(2);
         wrdList[0] = mesh_.time().timeName();
-        wrdList[1] = IOobject::groupName(bedName, dp2ndname);
+        wrdList[1] = IOobject::groupName(this->bedName(), dp2ndname);
 
         fileName dp2ndnameFileName(wrdList);
 
@@ -175,7 +175,8 @@ Foam::BioBed<BedType>::BioBed
             dp2nde(e) = dpe(e)/sqrt(this->sphericity());
         }
     }
-
+  
+  
     // Set storage for mass source fields and initialise to zero
     forAll(rhoTrans_, i)
     {
@@ -187,7 +188,7 @@ Foam::BioBed<BedType>::BioBed
             (
                 IOobject
                 (
-                    bedName + ":rhoTrans_" + specieName,
+                    this->bedName() + ":rhoTrans_" + specieName,
                     mesh.time().timeName(),
                     mesh,
                     IOobject::READ_IF_PRESENT,

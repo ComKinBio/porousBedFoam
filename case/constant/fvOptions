@@ -15,18 +15,18 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-// source1
-// {
-//     type            fixedTemperatureConstraint;
-// 
-//     timeStart       0;
-//     duration        120;
-//     selectionMode   cellSet;
-//     cellSet         ignitionCells;
-// 
-//     mode            uniform;
-//     temperature     1250;
-// }
+source1
+{
+    type            fixedTemperatureConstraint;
+
+    timeStart       0;
+    duration        120;
+    selectionMode   cellSet;
+    cellSet         ignitionCells;
+
+    mode            uniform;
+    temperature     1000;
+}
 
 
 // limitT

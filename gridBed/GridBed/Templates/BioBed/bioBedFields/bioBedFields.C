@@ -326,8 +326,46 @@ Foam::bioBedFields::bioBedFields
     }
     
     ash_porosity() = dimensionedScalar(dimless, ashFixedPorosity_.value());
-
-    w_percent() = moisture();
+    
+    moisture_.value();
+    ashContent_.value();
+    
+    // Initialize moisture and ashContent if t=0;
+    word wetNp = "particleNumber_wet";
+    word wName = "registeredRatio_wet";
+    
+    wordList wordListWetNp(2);
+    wordListWetNp[0] = mesh_.time().timeName();
+    wordListWetNp[1] = IOobject::groupName(bedName, wetNp);
+    fileName wetNpFileName(wordListWetNp);
+    
+    wordList wordListw(2);
+    wordListw[0] = mesh_.time().timeName();
+    wordListw[1] = IOobject::groupName(bedName, wName);
+    fileName wFileName(wordListw);
+    
+    if (!exists(wFileName) && exists(wetNpFileName))
+    {
+        w_percent() = moisture();
+    }
+    
+    word charNp = "particleNumber_char";
+    word etaName = "registeredRatio_char";
+    
+    wordList wordListCharNp(2);
+    wordListCharNp[0] = mesh_.time().timeName();
+    wordListCharNp[1] = IOobject::groupName(bedName, charNp);
+    fileName charNpFileName(wordListCharNp);
+    
+    wordList wordListeta(2);
+    wordListeta[0] = mesh_.time().timeName();
+    wordListeta[1] = IOobject::groupName(bedName, etaName);
+    fileName etaFileName(wordListeta);
+    
+    if (!exists(etaFileName) && exists(charNpFileName))
+    {
+        eta_percent() = ashContent();
+    }
 
 //debug
     Info<<"bioBedFields constructor called here"<<nl<<endl;

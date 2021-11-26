@@ -31,6 +31,8 @@ License
 #include "NoDevolatilisation.H"
 #include "SingleKineticRateDevolatilisation.H"
 #include "DiBlasiDevolatilisation.H"
+#include "StromNFDDevolatilisation.H"
+
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -38,6 +40,7 @@ License
                                                                                \
     makeDevolatilisationModel(BedType);                                        \
     makeDevolatilisationModelType(DiBlasiDevolatilisation, BedType);           \
+    makeDevolatilisationModelType(StromNFDDevolatilisation, BedType);          \
     makeDevolatilisationModelType(NoDevolatilisation, BedType);                \
     makeDevolatilisationModelType                                              \
     (                                                                          \
