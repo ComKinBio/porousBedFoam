@@ -96,7 +96,7 @@ constantProperties
     
     deltaTime 1e-4;
     
-//     hCoeff 58;
+    hRetentionCoeff 1;
 }
 
 collapseSetting

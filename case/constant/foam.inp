@@ -43,4 +43,31 @@ reactions
         beta     0;
         Ta       15098;
     }
+    
+    tarOxidationReaction
+    {
+        type    irreversibleArrheniusReaction;
+        reaction "tar^0.5 + 4.5O2^1.0 = 6CO + 4H2O";
+        A        9.2e+06;
+        beta     0;
+        Ta       9649;
+    }
+
+    H2OReductionReaction
+    {
+        type    irreversibleArrheniusReaction;
+        reaction "CO^1.0 + H2O^1.0 = CO2 + H2";
+        A        2.78e+3;
+        beta     0;
+        Ta       1510;
+    }
+
+    CO2ReductionReaction
+    {
+        type    irreversibleArrheniusReaction;
+        reaction "CO2^1.0 + H2^1.0 = CO + H2O";
+        A        93.69e+3;
+        beta     0;
+        Ta       5604;
+    }
 }
