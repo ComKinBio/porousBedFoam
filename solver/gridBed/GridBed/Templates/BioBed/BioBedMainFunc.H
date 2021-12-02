@@ -285,6 +285,14 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                 dhsTrans += dhsTransWet*npWet[celli];
                 }
             }
+            else
+            {
+                dWet[celli] = 0.0;
+                d2ndWet[celli] = 0.0;
+                mass0Wet[celli] = 0.0;
+                w[celli] = 0.0;
+                T0Wet[celli] = T0e(wet_);
+            }
             
 //debug
 //     Info<<"solveConversion Devolatilisation start"<<nl<<endl;            
@@ -431,6 +439,14 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                     dhsTrans += dhsTransDry*npDry[celli];
                 }
             }
+            else
+            {
+                dDry[celli] = 0.0;
+                d2ndDry[celli] = 0.0;
+                mass0Dry[celli] = 0.0;
+                gamma[celli] = 0.0;
+                T0Dry[celli] = T0e(dry_);
+            }
             
 // //debug
 //     Info<<"solveConversion Surface reactions start"<<"at celli: "<<celli<<nl<<endl;              
@@ -576,6 +592,14 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                     dhsTrans += dhsTransChar*npChar[celli];  
                 }
             }
+            else
+            {
+                dChar[celli] = 0.0;
+                d2ndChar[celli] = 0.0;
+                mass0Char[celli] = 0.0;
+                eta[celli] = 0.0;
+                T0Char[celli] = T0e(char_);
+            }
 // //debug
 //     Info<<"solveConversion heatTransfer for ash start"<<nl<<endl;              
             const scalar npAshi = npAsh[celli];
@@ -617,6 +641,13 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                 
                Sphe += sphAsh*npAshi;
                dhsTrans += dhsTransAsh*npAshi;
+            }
+            else
+            {
+                dAsh[celli] = 0.0;
+                d2ndAsh[celli] = 0.0;
+                mass0Ash[celli] = 0.0;
+                T0Ash[celli] = T0e(ash_);
             }
 // //debug
 //     Info<<"solveConversion carrier coupling start"<<nl<<endl;     

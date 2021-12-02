@@ -270,10 +270,6 @@ void Foam::BioBed<BedType>::componentUpdate()
     {
         if (numberRef[i]>0)
         {
-// //debug
-//     Info<<"componentUpdate "<<nl<<" dpRef[i] :"<<dpRef[i]
-//         <<" numberRefsaved[i] :"<<numberRefsaved[i]
-//         <<" numberRef[i] :"<<numberRef[i]<<endl; 
             dpRef[i] = cbrt(dpRef[i]/numberRef[i]);
         }
         else
