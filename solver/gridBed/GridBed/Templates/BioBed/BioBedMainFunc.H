@@ -216,7 +216,7 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
 
                     dDry[celli] = cbrt((pow3(dDry[celli])*npDry[celli] + pow3(dWet[celli])*npWeti)\
                                  /(npDry[celli] + npWet[celli]));
-                    d2ndDry[celli] = sqrt((pow3(d2ndDry[celli])*npDry[celli] + pow3(d2ndWet[celli])*npWeti)\
+                    d2ndDry[celli] = sqrt((sqr(d2ndDry[celli])*npDry[celli] + sqr(d2ndWet[celli])*npWeti)\
                                     /(npDry[celli] + npWet[celli]));
                     
                     gamma[celli] = mass0Dry[celli]*gamma[celli]\
@@ -371,7 +371,7 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
 
                     dChar[celli] = cbrt((pow3(dChar[celli])*npChar[celli] + pow3(dDry[celli])*npDryi)\
                                  /(npChar[celli] + npDry[celli]));
-                    d2ndChar[celli] = sqrt((pow3(d2ndChar[celli])*npChar[celli] + pow3(d2ndDry[celli])*npDryi)\
+                    d2ndChar[celli] = sqrt((sqr(d2ndChar[celli])*npChar[celli] + sqr(d2ndDry[celli])*npDryi)\
                                     /(npChar[celli] + npDry[celli]));
                      
                     eta[celli] = (newMass*npDryi*ashContent()
@@ -519,7 +519,7 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                     || (dmassCharBurned - mass0ActiveChari > 0 )
                     
                 )
-                {                    
+                {                  
                     T0Ash[celli] = (T0Ash[celli]*cpAsh[celli]*mass0Ash[celli]
                                   + T0Char[celli]*cpChar[celli]*mass0AshInChari*npChar[celli])\
                                   /(cpAsh[celli]*mass0Ash[celli]
@@ -527,11 +527,20 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                     
                     mass0Ash[celli] += mass0AshInChari*npChar[celli];
                     
+                    dChar[celli] = 
+                        dpAfterShrink(dChari, mass0Char[celli]/npChar[celli], dmassCharBurned, shrinkageFactorGamma());
+                    d2ndChar[celli] = dChar[celli]/sqrt(this->sphericity());
+
+                    dAsh[celli] = cbrt((pow3(dAsh[celli])*npAsh[celli] + pow3(dChar[celli])*npChari)\
+                                 /(npChari + npAsh[celli]));
+                    d2ndAsh[celli] = sqrt((sqr(d2ndAsh[celli])*npAsh[celli] + sqr(d2ndChar[celli])*npChari)\
+                                    /(npChari + npAsh[celli]));
+                    
                     eta[celli] = 0;
                     mass0Char[celli] = 0;
                     
                     npAsh[celli] += npChar[celli];
-                    npChar[celli] = 0;
+                    npChar[celli] = 0;   
                 }
                 else
                 {
@@ -539,7 +548,7 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
 //     Info<<"solveConversion Surface reactions calcCharBurnOut finished"<<nl<<endl;   
                     scalar dmassLoss = dmassCharBurned;
                     dChar[celli] = 
-                        dpAfterShrink(dChari, mass0Char[celli]/npChar[celli], dmassCharBurned, shrinkageFactorBeta());
+                        dpAfterShrink(dChari, mass0Char[celli]/npChar[celli], dmassCharBurned, shrinkageFactorGamma());
                     d2ndChar[celli] = dChar[celli]/sqrt(this->sphericity());
                     eta[celli] = mass0AshInChari*npChar[celli]/(mass0Char[celli]- dmassLoss*npChar[celli]);
                     mass0Char[celli] -= dmassLoss*npChar[celli];
@@ -599,9 +608,7 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                 mass0Char[celli] = 0.0;
                 eta[celli] = 0.0;
                 T0Char[celli] = T0e(char_);
-            }
-// //debug
-//     Info<<"solveConversion heatTransfer for ash start"<<nl<<endl;              
+            }           
             const scalar npAshi = npAsh[celli];
             if (npAshi >= 1)
             {
@@ -616,7 +623,7 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                 
                 // Calculate new particle temperature
                 const scalar cpAshi = cpAsh[celli];
-                
+                  
                 T0Ash[celli] =
                     calcHeatTransfer
                     (
@@ -649,8 +656,7 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                 mass0Ash[celli] = 0.0;
                 T0Ash[celli] = T0e(ash_);
             }
-// //debug
-//     Info<<"solveConversion carrier coupling start"<<nl<<endl;     
+    
         // 2. Accumulate carrier phase source terms
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    
