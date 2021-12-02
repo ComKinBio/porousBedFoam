@@ -47,6 +47,13 @@ Foam::bioBedFields::ashFixedPorosity() const
 
 
 inline Foam::scalar
+Foam::bioBedFields::charYield() const
+{
+    return charYield_.value();
+}
+
+
+inline Foam::scalar
 Foam::bioBedFields::rhope(particlePhase e) const
 {
     return rhopPtrList_[e]().value();

@@ -106,6 +106,9 @@ protected:
             //- Latent heat of devolatilisation [J/kg]
             demandDrivenEntry<scalar> LDevol_;
             
+            //- minimum mass fraction threshold
+            demandDrivenEntry<scalar> wMinMass_;
+            
             //- shrinkageMode factor
             demandDrivenEntry<scalar> shrinkageFactorAlpha_;
             demandDrivenEntry<scalar> shrinkageFactorBeta_;
@@ -217,6 +220,9 @@ public:
 
             //- Return const access to the latent heat of devolatilisation
             inline scalar LDevol() const;
+            
+             //- Return const access to minimum mass fraction threshold
+            inline scalar wMinMass() const;
             
             //- Return const access to shrinkageMode factor
             inline scalar shrinkageFactorAlpha() const;
@@ -402,6 +408,7 @@ public:
                     const scalar Rec,
                     const scalar e_bed,
                     const scalar mass,
+                    const scalar massAsh,
                     const scalar np,
                     const scalar N,
                     scalar& dmass,
@@ -449,6 +456,7 @@ public:
                         const scalar Re,
                         const scalar Pr,
                         const scalar kappa,
+                        const scalar shellR,
                         const scalar NCpW,
                         const scalar Sh,
                         const scalar Gc,
@@ -466,6 +474,10 @@ public:
                         const label toCell,
                         const scalar number
                     );
+                    
+                    //- update BedList according to current particle number field
+                    //- update componentUpdate first here
+                    void updateBedList();
 //                     
 //                     //- update Bed fields according to particle number change
 //                     //- reload function add initial particle from source

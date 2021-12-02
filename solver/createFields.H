@@ -254,3 +254,5 @@ volScalarField bedsigmap
     mesh,
     dimensionedScalar(dimless/dimLength, 0)
 );
+
+#include "gasOxidation.H"

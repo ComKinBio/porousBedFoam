@@ -111,6 +111,7 @@ Foam::BioBed<BedType>::BioBed
     bioBedFields(bedName, mesh, this->particleProperties_),
     TDevol_(this->constProperties_, "TDevol", 0.0),
     LDevol_(this->constProperties_, "LDevol", 0.0),
+    wMinMass_(this->constProperties_, "massThreshold", 0.999),
     shrinkageFactorAlpha_(this->particleProperties_, "shrinkageFactorAlpha", 0.10),
     shrinkageFactorBeta_(this->particleProperties_, "shrinkageFactorBeta", 0.39),
     shrinkageFactorGamma_(this->particleProperties_, "shrinkageFactorGamma", 0.95),
@@ -201,6 +202,8 @@ Foam::BioBed<BedType>::BioBed
     }
     
     setModels();
+    
+    updateBedThermo();
        
     componentUpdate();
     
@@ -208,8 +211,6 @@ Foam::BioBed<BedType>::BioBed
     
     this->alphaCalc();
     
-//debug
-    Info<<"BioBed Constructor called"<<nl<<endl;
 }
 
 // * * * * * * * * * * * * * * * Main Function  * * * * * * * * * * * * * //
@@ -230,6 +231,7 @@ void Foam::BioBed<BedType>::solveConversion()
 template<class BedType>
 void Foam::BioBed<BedType>::componentUpdate()
 {
+    updateBedThermo();
 
     tmp<volScalarField> tparticleNumber
     (
@@ -348,7 +350,7 @@ void Foam::BioBed<BedType>::componentUpdate()
     {
         if (numberRef[i]>0)
         {
-            trhopRef[i] = tmassRef[i]/this->volume(numberRef[i]);
+            trhopRef[i] = tmassRef[i]/numberRef[i]/this->volume(dpRef[i]);
         }
         else
         {
@@ -476,6 +478,7 @@ Foam::scalar Foam::BioBed<BedType>::calcHeatTransfer
     const scalar Re,
     const scalar Pr,
     const scalar kappa,
+    const scalar shellR,
     const scalar NCpW,
     const scalar Sh,
     const scalar Gc,
@@ -488,6 +491,8 @@ Foam::scalar Foam::BioBed<BedType>::calcHeatTransfer
 
     // Calc heat transfer coefficient
     scalar htc = this->heatTransfer().htc(d, Re, Pr, kappa, NCpW);
+    
+    htc = htc/(shellR*As*htc + 1);
 
     // Calculate the integration coefficients
     const scalar bcp = htc*As/(m*cpbed);
@@ -526,77 +531,96 @@ void Foam::BioBed<BedType>::updateBedfieldsPrompt
     const scalar number
 )
 {
+
     for (const auto e : bedComponents)
     {
-        scalar numbere = 
-            number*particleNumbere(e)[fromCell]\
-            /this->particleNumber()[fromCell];
-        numbere = std::round(number);
+        if (particleNumbere(e)[fromCell]>0)
+        {
+            scalar numbere = 
+                number*particleNumbere(e)[fromCell]\
+                /this->particleNumber()[fromCell];
+            numbere = std::round(number);
+                
+            if (numbere > particleNumbere(e)[fromCell])
+            {
+                numbere = particleNumbere(e)[fromCell];
+            }
             
-        if (numbere > particleNumbere(e)[fromCell])
-        {
-            numbere = particleNumbere(e)[fromCell];
-        }
-        
-        // Before transfer number records
-        scalar npj = particleNumbere(e)[toCell];
-        
-        // update number
-        particleNumbere(e)[fromCell] -= numbere;
-        particleNumbere(e)[toCell] += numbere;    
-        
-        // update dp_, toCell only
-        dpe(e)[toCell] = cbrt( (pow3(dpe(e)[toCell])*npj 
-                              + pow3(dpe(e)[fromCell])*numbere)\
-                               /particleNumbere(e)[toCell] );
-        
-        // update dp2nd_, toCell only
-        dp2nde(e)[toCell] = sqrt( (sqr( dp2nde(e)[toCell])*npj 
-                                 + sqr(dp2nde(e)[fromCell])*number)\
-                                  /particleNumbere(e)[toCell] );
-      
-        scalar dmassij = numbere/particleNumbere(e)[fromCell]*masse(e)[fromCell];
-        
-        // update conversion ratio
-        if (e == wet_)
-        {
-            w_percent()[toCell] = ( dmassij*w_percent()[fromCell] 
-                                  + masse(e)[toCell]*w_percent()[toCell] )\
-                                   /(dmassij + masse(e)[toCell]);
-        }
-        else if (e == dry_)
-        {
-            gamma_percent()[toCell] = ( dmassij*gamma_percent()[fromCell] 
-                                      + masse(e)[toCell]*gamma_percent()[toCell] )\
-                                       /(dmassij + masse(e)[toCell]);
-        }
-        else if (e == char_)
-        {
-            eta_percent()[toCell] = ( dmassij*eta_percent()[fromCell] 
-                                    + masse(e)[toCell]*eta_percent()[toCell] )\
+            // Before transfer number records
+            scalar npj = particleNumbere(e)[toCell];
+            
+            // Calc transfered mass
+            scalar dmassij = numbere/particleNumbere(e)[fromCell]*masse(e)[fromCell];
+            
+            // update number
+            particleNumbere(e)[fromCell] -= numbere;
+            particleNumbere(e)[toCell] += numbere;    
+            
+            // update dp_, toCell only
+            dpe(e)[toCell] = cbrt( (pow3(dpe(e)[toCell])*npj 
+                                + pow3(dpe(e)[fromCell])*numbere)\
+                                /particleNumbere(e)[toCell] );
+            
+            // update dp2nd_, toCell only
+            dp2nde(e)[toCell] = sqrt( (sqr( dp2nde(e)[toCell])*npj 
+                                    + sqr(dp2nde(e)[fromCell])*numbere)\
+                                    /particleNumbere(e)[toCell] );
+            
+            // update conversion ratio
+            if (e == wet_)
+            {
+                w_percent()[toCell] = ( dmassij*w_percent()[fromCell] 
+                                    + masse(e)[toCell]*w_percent()[toCell] )\
                                     /(dmassij + masse(e)[toCell]);
-        }
-        
-        // update temperature
-        bedTe(e)[toCell] = ( bedTe(e)[fromCell]*dmassij 
-                            + bedTe(e)[toCell]*masse(e)[toCell] )\
-                             /(dmassij + masse(e)[toCell]);
-        // update mass
-        
-        masse(e)[fromCell] -= dmassij;
-        masse(e)[toCell] += dmassij;
+            }
+            else if (e == dry_)
+            {
+                gamma_percent()[toCell] = ( dmassij*gamma_percent()[fromCell] 
+                                        + masse(e)[toCell]*gamma_percent()[toCell] )\
+                                        /(dmassij + masse(e)[toCell]);
+            }
+            else if (e == char_)
+            {
+                eta_percent()[toCell] = ( dmassij*eta_percent()[fromCell] 
+                                        + masse(e)[toCell]*eta_percent()[toCell] )\
+                                        /(dmassij + masse(e)[toCell]);
+            }
+            
+            // update temperature
+            bedTe(e)[toCell] = ( bedTe(e)[fromCell]*dmassij 
+                                + bedTe(e)[toCell]*masse(e)[toCell] )\
+                                /(dmassij + masse(e)[toCell]);
+            // update mass
+            
+            masse(e)[fromCell] -= dmassij;
+            masse(e)[toCell] += dmassij;
 
-        //- Constant, no update
-        //- Bed specific heat capacity field [J/kg/K]
-        //- and  heat conductivity field [J/s/m/K]        
-        
-        // update alpha in i,j
-        this->alpha_[fromCell] = 
-            max(1.0 - this->volume(fromCell)/this->mesh_.V()[fromCell], this->alphaMin_);
-        this->alpha_[toCell] = 
-            max(1.0 - this->volume(toCell)/this->mesh_.V()[toCell], this->alphaMin_);        
+            //- Constant, no update
+            //- Bed specific heat capacity field [J/kg/K]
+            //- and  heat conductivity field [J/s/m/K]        
+            
+            // update alpha in i,j
+            this->alpha_[fromCell] = 
+                max(1.0 - this->volume(fromCell)/this->mesh_.V()[fromCell], this->alphaMin_);
+            this->alpha_[toCell] = 
+                max(1.0 - this->volume(toCell)/this->mesh_.V()[toCell], this->alphaMin_);
+        }
     }
+    
+    updateBedThermo();
+
 }
+
+template<class BedType>
+void Foam::BioBed<BedType>::updateBedList()
+{
+
+    componentUpdate();
+    
+    BedType::updateBedList();
+}
+    
+    
 
 // template<class BedType>
 // void Foam::BioBed<BedType>::updateBedfieldsPrompt

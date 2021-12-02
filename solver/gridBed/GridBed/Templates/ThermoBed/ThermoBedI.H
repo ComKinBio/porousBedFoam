@@ -349,9 +349,11 @@ Foam::ThermoBed<BedType>::Sh(volScalarField& hs, const scalar dt) const
     }
     else
     {        
+        dimensionedScalar dtdim(dimTime, dt);
+        
         const volScalarField Cp(thermo_.thermo().Cp());
         const volScalarField::Internal
-            Vdt(this->mesh().V()*dt);
+            Vdt(this->mesh().V()*dtdim);
 
         return
             hsTrans()/Vdt

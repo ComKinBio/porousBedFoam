@@ -80,6 +80,7 @@ Foam::scalar Foam::NoSurfaceReaction<BedType>::calculate
     const scalar,
     const scalar,
     const scalar,
+    const scalar,
     scalar&,
     scalarField&
 ) const

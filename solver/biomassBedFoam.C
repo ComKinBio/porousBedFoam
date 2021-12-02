@@ -76,6 +76,9 @@ int main(int argc, char *argv[])
 
     Info<< "\nStarting time loop\n" << endl;
     
+    label collapseSolverFreq = bioBed.collapseSetting().lookupOrDefault<label>("solverFreq", 1);
+    collapseSolverFreq = max(1, collapseSolverFreq);
+    
     bool solverFirstIter = true;
  
     while (runTime.run())
@@ -103,6 +106,12 @@ int main(int argc, char *argv[])
             << "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
             << "  ClockTime = " << runTime.elapsedClockTime() << " s"
             << nl << endl;
+            
+        
+        if (runTime.timeIndex() % collapseSolverFreq == 0)
+        {
+            bioBed.gravityCollapse();
+        }
         
         bioBed.solveConversion();
         
@@ -133,6 +142,7 @@ int main(int argc, char *argv[])
         while (pimple.loop())
         {
             #include "UcEqn.H"
+            #include "gasOxidationCalc.H"
             #include "YEqn.H"
             #include "EEqn.H"
 

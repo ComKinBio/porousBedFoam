@@ -30,15 +30,17 @@ License
 
 #include "NoMassTransfer.H"
 #include "RanzMarshallM.H"
+#include "WakaoM.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #define makeParcelMassTransferModels(BedType)                                \
-                                                                               \
+                                                                             \
     makeMassTransferModel(BedType);                                          \
-                                                                               \
+                                                                             \
     makeMassTransferModelType(NoMassTransfer, BedType);                      \
-    makeMassTransferModelType(RanzMarshallM, BedType);
+    makeMassTransferModelType(RanzMarshallM, BedType);                       \
+    makeMassTransferModelType(WakaoM, BedType);
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

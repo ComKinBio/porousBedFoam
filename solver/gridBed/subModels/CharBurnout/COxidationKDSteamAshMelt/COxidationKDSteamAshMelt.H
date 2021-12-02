@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Copyright (C) 2011-2019 OpenFOAM Foundation
+   \\    /   O peration     |
+    \\  /    A nd           | Copyright (C) 2011-2016 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -22,20 +22,20 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::COxidationMurphyShaddix
+    Foam::COxidationKineticDiffusionLimitedRateWithAsh
 
 Description
-    Limited to C(s) + O2 -> CO2
+    Kinetic/diffusion limited rate surface reaction model for coal parcels.
+    Limited to:
 
-    Loosely based on the reference:
-        Murphy, J. J., Shaddix, C. R., Combustion kinetics of coal chars
-        in oxygen-enriched environments, Combustion and Flame 144,
-        pp710-729, 2006
+        Omiga*C(s) + O2 -> 2*(Omiga-1)CO + (2-Omiga)CO2
+
+    where Omiga is a correlation given by Thumman, H (2002) Combustion of wood particle - a  particle model for Eulerian calculations.
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef COxidationMurphyShaddix_H
-#define COxidationMurphyShaddix_H
+#ifndef COxidationKDSteamAshMelt_H
+#define COxidationKDSteamAshMelt_H
 
 #include "SurfaceReactionModel.H"
 
@@ -46,53 +46,49 @@ namespace Foam
 
 // Forward class declarations
 template<class BedType>
-class COxidationMurphyShaddix;
+class COxidationKDSteamAshMelt;
 
 /*---------------------------------------------------------------------------*\
-                  Class COxidationMurphyShaddix Declaration
+            Class COxidationKineticDiffusionLimitedRate Declaration
 \*---------------------------------------------------------------------------*/
 
 template<class BedType>
-class COxidationMurphyShaddix
+class COxidationKDSteamAshMelt
 :
     public SurfaceReactionModel<BedType>
 {
-    // Private Data
+    // Private data
 
         // Model constants
 
-            //- Reference diffusion constant
-            const scalar D0_;
+            //- Omiga correlation constant
+            const scalar COmega_;
 
-            //- Reference density for reference diffusion constant
-            const scalar rho0_;
+            //- porosity of the ash layer
+            const scalar ep3_;
+            const scalar epLowT_;
+            const scalar epHightT_;
+            
+            const scalar Tswitch_;
+            const scalar delta_;
 
-            //- Reference temperature for reference diffusion constant
-            const scalar T0_;
+            //- Mass diffusion limited rate constant, C1 constant in gas phase diffusion coefficient
+            const scalar C1_O2_;
+            const scalar C1_H2O_;
+            const scalar C1_CO2_;
+            const scalar C1_H2_;
 
-            //- Exponent for diffusion equation
-            const scalar Dn_;
+            //- Kinetics limited rate pre-exponential constant, C2
+            const scalar C2_1_;
+            const scalar C2_2_;
+            const scalar C2_3_;
+            const scalar C2_4_;
 
-            //- Kinetic rate coefficient
-            const scalar A_;
-
-            //- Kinetic rate activation energy
-            const scalar E_;
-
-            //- Reaction order
-            const scalar n_;
-
-            //- Effective molecular weight of gaseous volatiles
-            const scalar WVol_;
-
-
-        // Static constants
-
-            //- Maximum number of iterations
-            static label maxIters_;
-
-            //- Tolerance used in inner iterations
-            static scalar tolerance_;
+            //- Kinetics limited rate activation energy RR together
+            const scalar E_1_;
+            const scalar E_2_;
+            const scalar E_3_;
+            const scalar E_4_;
 
 
         // Addressing
@@ -102,15 +98,31 @@ class COxidationMurphyShaddix
 
             //- O2 position in global list
             label O2GlobalId_;
+            
+            label CH4GlobalId_;
+            
+            label H2OGlobalId_;
 
             //- CO2 positions in global list
             label CO2GlobalId_;
+
+            //- CO positions in global list
+            label COGlobalId_;
+            
+            label H2GlobalId_;
+            
 
 
         // Local copies of thermo properties
 
             //- Molecular weight of C [kg/kmol]
             scalar WC_;
+            
+            scalar WH2O_;
+            
+            scalar WCO2_;
+            
+            scalar WH2_;
 
             //- Molecular weight of O2 [kg/kmol]
             scalar WO2_;
@@ -118,26 +130,29 @@ class COxidationMurphyShaddix
             //- Formation enthalpy for CO2 [J/kg]
             scalar HcCO2_;
 
+            //- Formation enthalpy for CO [J/kg]
+            scalar HcCO_;
+
 
 public:
 
     //- Runtime type information
-    TypeName("COxidationMurphyShaddix");
+    TypeName("COxidationKDSteamAshMelt");
 
 
     // Constructors
 
         //- Construct from dictionary
-        COxidationMurphyShaddix
+        COxidationKDSteamAshMelt
         (
             const dictionary& dict,
             BedType& owner
         );
 
         //- Construct copy
-        COxidationMurphyShaddix
+        COxidationKDSteamAshMelt
         (
-            const COxidationMurphyShaddix<BedType>& srm
+            const COxidationKDSteamAshMelt<BedType>& srm
         );
 
         //- Construct and return a clone
@@ -145,13 +160,13 @@ public:
         {
             return autoPtr<SurfaceReactionModel<BedType>>
             (
-                new COxidationMurphyShaddix<BedType>(*this)
+                new COxidationKDSteamAshMelt<BedType>(*this)
             );
         }
 
 
     //- Destructor
-    virtual ~COxidationMurphyShaddix();
+    virtual ~COxidationKDSteamAshMelt();
 
 
     // Member Functions
@@ -186,7 +201,7 @@ public:
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #ifdef NoRepository
-    #include "COxidationMurphyShaddix.C"
+    #include "COxidationKDSteamAshMelt.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

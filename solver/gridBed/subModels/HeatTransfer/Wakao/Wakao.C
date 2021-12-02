@@ -23,28 +23,46 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef makeParcelHeatTransferModels_H
-#define makeParcelHeatTransferModels_H
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-#include "NoHeatTransfer.H"
-#include "RanzMarshall.H"
 #include "Wakao.H"
 
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-#define makeParcelHeatTransferModels(BedType)                                \
-                                                                             \
-    makeHeatTransferModel(BedType);                                          \
-                                                                             \
-    makeHeatTransferModelType(NoHeatTransfer, BedType);                      \
-    makeHeatTransferModelType(Wakao, BedType);                               \
-    makeHeatTransferModelType(RanzMarshall, BedType);
+template<class BedType>
+Foam::Wakao<BedType>::Wakao
+(
+    const dictionary& dict,
+    BedType& bed
+)
+:
+    HeatTransferModel<BedType>(dict, bed, typeName)
+{}
 
 
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+template<class BedType>
+Foam::Wakao<BedType>::Wakao(const Wakao<BedType>& htm)
+:
+    HeatTransferModel<BedType>(htm)
+{}
 
-#endif
+
+// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
+
+template<class BedType>
+Foam::Wakao<BedType>::~Wakao()
+{}
+
+
+// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
+
+template<class BedType>
+Foam::scalar Foam::Wakao<BedType>::Nu
+(
+    const scalar Re,
+    const scalar Pr
+) const
+{
+    return 2.0 + 1.1*pow(Re, 0.6)*cbrt(Pr);
+}
+
 
 // ************************************************************************* //

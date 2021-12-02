@@ -91,6 +91,9 @@ protected:
             
             //- Initial ash porosity is not changed
             demandDrivenEntry<scalar> ashFixedPorosity_;
+            
+            //- Estimated char yield
+            demandDrivenEntry<scalar> charYield_;
         
         
         // bioField components properties, list size = 4
@@ -184,6 +187,9 @@ public:
             
             //- Return const access to initial ash porosity
             inline scalar ashFixedPorosity() const;
+            
+            //- Return const access to estimated char yield
+            inline scalar charYield() const;
         
             //- Return const access to rhop [kg/m^3]
             inline scalar rhope(particlePhase e) const;
@@ -241,6 +247,12 @@ public:
             
             //- Return access to ash porosity
             inline volScalarField& ash_porosity();
+            
+        
+        // Member functions
+        
+            // Update thermophysical properties
+            void updateBedThermo();
 
             
 };

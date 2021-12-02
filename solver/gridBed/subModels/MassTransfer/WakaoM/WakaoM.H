@@ -21,27 +21,84 @@ License
     You should have received a copy of the GNU General Public License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
+Class
+    Foam::WakaoM
+
+Description
+    The Ranz-Marshall correlation for heat transfer
+
 \*---------------------------------------------------------------------------*/
 
-#ifndef makeParcelHeatTransferModels_H
-#define makeParcelHeatTransferModels_H
+#ifndef WakaoM_H
+#define WakaoM_H
+
+#include "MassTransferModel.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-#include "NoHeatTransfer.H"
-#include "RanzMarshall.H"
-#include "Wakao.H"
+namespace Foam
+{
+
+/*---------------------------------------------------------------------------*\
+                         Class WakaoM Declaration
+\*---------------------------------------------------------------------------*/
+
+template<class BedType>
+class WakaoM
+:
+    public MassTransferModel<BedType>
+{
+
+public:
+
+    //- Runtime type information
+    TypeName("Wakao");
+
+
+    // Constructors
+
+        //- Construct from dictionary
+        WakaoM(const dictionary& dict, BedType& bed);
+
+        //- Construct copy
+        WakaoM(const WakaoM<BedType>& im);
+
+        //- Construct and return a clone
+        virtual autoPtr<MassTransferModel<BedType>> clone() const
+        {
+            return autoPtr<MassTransferModel<BedType>>
+            (
+                new WakaoM<BedType>(*this)
+            );
+        }
+
+
+    //- Destructor
+    virtual ~WakaoM();
+
+
+    // Member Functions
+
+        // Evaluation
+
+            //- Sherwood number
+            virtual scalar Sh
+            (
+                const scalar Re,
+                const scalar Sc
+            ) const;
+};
+
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-#define makeParcelHeatTransferModels(BedType)                                \
-                                                                             \
-    makeHeatTransferModel(BedType);                                          \
-                                                                             \
-    makeHeatTransferModelType(NoHeatTransfer, BedType);                      \
-    makeHeatTransferModelType(Wakao, BedType);                               \
-    makeHeatTransferModelType(RanzMarshall, BedType);
+} // End namespace Foam
 
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#ifdef NoRepository
+    #include "WakaoM.C"
+#endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

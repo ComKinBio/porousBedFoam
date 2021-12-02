@@ -150,6 +150,7 @@ public:
             const scalar Rec,
             const scalar e_bed,
             const scalar mass,
+            const scalar massAsh,
             const scalar N,
             scalar& dmass,
             scalarField& dMassSRCarrier

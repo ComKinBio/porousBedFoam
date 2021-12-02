@@ -31,6 +31,8 @@ License
 #include "NoSurfaceReaction.H"
 #include "COxidationKineticDiffusionLimitedRate.H"
 #include "COxidationMurphyShaddix.H"
+#include "COxidationKineticDiffusionLimitedRateWithAshSteam.H"
+#include "COxidationKDSteamAshMelt.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -40,6 +42,16 @@ License
     makeSurfaceReactionModelType                                               \
     (                                                                          \
         COxidationKineticDiffusionLimitedRate,                                 \
+        BedType                                                                \
+    );                                                                         \
+    makeSurfaceReactionModelType                                               \
+    (                                                                          \
+        COxidationKDSteamAshMelt,                                              \
+        BedType                                                                \
+    );                                                                         \
+    makeSurfaceReactionModelType                                               \
+    (                                                                          \
+        COxidationKineticDiffusionLimitedRateWithAshSteam,                     \
         BedType                                                                \
     );                                                                         \
     makeSurfaceReactionModelType(COxidationMurphyShaddix, BedType);

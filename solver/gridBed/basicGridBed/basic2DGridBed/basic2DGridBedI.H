@@ -319,8 +319,10 @@ Foam::basic2DGridBed::SU
     }
     else
     {
+        dimensionedScalar dtdim(dimTime, dt);
+        
         const volScalarField::Internal
-            Vdt(mesh_.V()*dt);       
+            Vdt(mesh_.V()*dtdim);       
 
         return UTrans()/Vdt - fvm::Sp(UCoeff()/Vdt, U) + UCoeff()/Vdt*U;
     }

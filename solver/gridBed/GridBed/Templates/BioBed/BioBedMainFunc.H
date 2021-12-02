@@ -98,10 +98,12 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
     const scalar epsilon0Char = epsilon0e(char_);
     const scalar epsilon0Ash = epsilon0e(ash_);
     
-    const scalar kappaWet = kp0e(wet_);
+//     const scalar kappaWet = kp0e(wet_);
     const scalar kappaDry = kp0e(dry_);
     const scalar kappaChar = kp0e(char_);
     const scalar kappaAsh = kp0e(ash_);
+    
+    const scalar massCharInitial = rhope(dry_)*this->volume(dp0e(dry_))*charYield();
 
     //- bed loop
     forAll(bedList, i)
@@ -201,7 +203,7 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
 
                 // dMassDrying is the total mass of vaparized water
                 // Update wet bed fields
-                if (mag(sum(dMassDrying) - mass0Wateri/npWeti)<small && mass0Wateri > small)
+                if (mag(sum(dMassDrying) - mass0Wateri/npWeti)<small && mag(sum(dMassDrying)) > small)
                 { 
                     T0Dry[celli] = (T0Dry[celli]*cpDry[celli]*mass0Dry[celli]
                                   + T0Wet[celli]*cpWet[celli]*mass0Wet[celli]*(1-w[celli]))\
@@ -247,6 +249,16 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                     // Calculate new particle temperature
                     const scalar cpWeti = cpWet[celli];
                     
+                    // Calculat shell heat resistance (r2-r1)/(4pir1r2k)
+                    scalar oneWetMassi = mass0Wet[celli]/npWet[celli];
+                    scalar coreMass = oneWetMassi*w[celli]/moisture();
+                    scalar shellMass = oneWetMassi - coreMass;
+                    scalar volumeCore = coreMass/rhope(wet_);
+                    scalar volumeshell = shellMass/rhope(dry_);
+                    scalar r1 = cbrt(6.0*volumeCore/constant::mathematical::pi);
+                    scalar r2 = cbrt(6.0*(volumeCore + volumeshell)/constant::mathematical::pi);
+                    scalar wetRi = (r2-r1)/(4*constant::mathematical::pi*r1*r2*kappaDry);
+                    
                     T0Wet[celli] =
                         calcHeatTransfer
                         (
@@ -259,7 +271,8 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                             Tc,
                             Res,
                             Prs,
-                            kappaWet,
+                            kappas,
+                            wetRi,
                             NCpW,
                             shWet,
                             G,
@@ -328,8 +341,13 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                     Cs
                 );
                 
+                if (gamma[celli] > wMinMass())
+                {
+                    dMass = mass0ActiveDryi;
+                }
+                
                 // dMass is the total mass of devo wood
-                if (mag(dMass - mass0ActiveDryi)<small && mass0ActiveDryi > small)
+                if (mag(dMass - mass0ActiveDryi)<small && mag(dMass) > small)
                 {
                     scalar newMass = dMassChar + mass0YieldChari;
                     
@@ -363,8 +381,8 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                 {
                     dDry[celli] = dpAfterShrink(dDryi, mass0Dry[celli]/npDryi, dMass, shrinkageFactorBeta());
                     d2ndDry[celli] = dDry[celli]/sqrt(this->sphericity());
-                    gamma[celli] = (mass0YieldChari + dMassChar)*dDryi/(mass0Dry[celli]- sum(dMassDV)*dDryi);
-                    mass0Dry[celli] -= sum(dMassDV)*dDryi;
+                    gamma[celli] = (mass0YieldChari + dMassChar)*npDryi/(mass0Dry[celli]- sum(dMassDV)*npDryi);
+                    mass0Dry[celli] -= sum(dMassDV)*npDryi;
                 }
                 
                 // Calculate new particle temperature
@@ -376,6 +394,16 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                     
                     // Calculate new particle temperature
                     const scalar cpDryi = cpDry[celli];
+                    
+                    // Calculat shell heat resistance (r2-r1)/(4pir1r2k)
+                    scalar oneDryMassi = mass0Dry[celli]/npDry[celli];
+                    scalar coreMass = oneDryMassi*(1-gamma[celli]);
+                    scalar shellMass = oneDryMassi - coreMass;
+                    scalar volumeCore = coreMass/rhope(dry_);
+                    scalar volumeshell = shellMass/rhope(char_);
+                    scalar r1 = cbrt(6.0*volumeCore/constant::mathematical::pi);
+                    scalar r2 = cbrt(6.0*(volumeCore + volumeshell)/constant::mathematical::pi);
+                    scalar dryRi = (r2-r1)/(4*constant::mathematical::pi*r1*r2*kappaChar);
 
                     T0Dry[celli] =
                         calcHeatTransfer
@@ -389,7 +417,8 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                             Tc,
                             Res,
                             Prs,
-                            kappaDry,
+                            kappas,
+                            dryRi,
                             NCpW,
                             shDry,
                             G,
@@ -420,8 +449,11 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                 const scalar T0Chari = T0Char[celli];
                 const scalar mass0AshInChari = mass0Char[celli]*eta[celli]/npChari;
                 const scalar mass0ActiveChari = mass0Char[celli]*(1-eta[celli])/npChari;
-            
                 
+                // Current ash that according to the char burnt, 
+                // mass0AshInChari is the total ash both in active char and burnt char
+                const scalar mass0AshLayer = max(small, (massCharInitial - mass0ActiveChari))*ashContent();
+            
                 // Calc surface values for wet particle
                 this->calcSurfaceValues(celli, T0Chari, Ts, rhos, mus, Prs, kappas);
                 scalar Res = this->Re(rhos, Uc, d2ndChari, mus);
@@ -450,6 +482,7 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                     Res,
                     0.45, //e_bed, hardcoded now
                     mass0ActiveChari,
+                    mass0AshLayer,
                     npChari,
                     Ne,
                     dmassCharBurned,
@@ -458,8 +491,18 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                     dhsTransChar
                 );
                 
+                if (eta[celli] > wMinMass())
+                {
+                    dmassCharBurned = mass0ActiveChari;
+                }
+                
                 // dmassCharBurned is the total mass of char burnout
-                if (mag(dmassCharBurned - mass0ActiveChari)<small && mass0ActiveChari > small)
+                if 
+                (
+                    (mag(dmassCharBurned - mass0ActiveChari)<small && mag(dmassCharBurned) > small)
+                    || (dmassCharBurned - mass0ActiveChari > 0 )
+                    
+                )
                 {                    
                     T0Ash[celli] = (T0Ash[celli]*cpAsh[celli]*mass0Ash[celli]
                                   + T0Char[celli]*cpChar[celli]*mass0AshInChari*npChar[celli])\
@@ -478,7 +521,7 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                 {
 // //debug
 //     Info<<"solveConversion Surface reactions calcCharBurnOut finished"<<nl<<endl;   
-                    scalar dmassLoss = dmassCharBurned*(1.0 - eta[celli]);
+                    scalar dmassLoss = dmassCharBurned;
                     dChar[celli] = 
                         dpAfterShrink(dChari, mass0Char[celli]/npChar[celli], dmassCharBurned, shrinkageFactorBeta());
                     d2ndChar[celli] = dChar[celli]/sqrt(this->sphericity());
@@ -496,6 +539,17 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                     // Calculate new particle temperature
                     const scalar cpChari = cpChar[celli];
                     
+                    // Calculat shell heat resistance (r2-r1)/(4pir1r2k)
+                    scalar oneCharMassi = mass0Char[celli]/npChar[celli];
+                    scalar coreMass = oneCharMassi*(1-eta[celli]);
+                    scalar shellMass = max(small, (massCharInitial - coreMass))*ashContent();
+                    scalar volumeCore = coreMass/rhope(char_);
+                    scalar volumeshell = shellMass/rhope(ash_)/(1 - ashFixedPorosity());
+                    scalar r1 = cbrt(6.0*volumeCore/constant::mathematical::pi);
+                    scalar r2 = cbrt(6.0*(volumeCore + volumeshell)/constant::mathematical::pi);
+                    scalar kappaPorousAsh = ashFixedPorosity()*kappas + (1 - ashFixedPorosity())*kappaAsh;
+                    scalar CharRi = (r2-r1)/(4*constant::mathematical::pi*r1*r2*kappaPorousAsh);
+                    
                     T0Char[celli] =
                         calcHeatTransfer
                         (
@@ -508,7 +562,8 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                             Tc,
                             Res,
                             Prs,
-                            kappaChar,
+                            kappas,
+                            CharRi,
                             NCpW,
                             shChar,
                             G,
@@ -550,7 +605,8 @@ void Foam::BioBed<BedType>::solveConversion(const scalar dt)
                         Tc,
                         Res,
                         Prs,
-                        kappaAsh,
+                        kappas,
+                        0.0,
                         0.0,
                         0.0,
                         G,
@@ -847,6 +903,7 @@ void Foam::BioBed<BedType>::calcCharBurnOut
     const scalar Rec,
     const scalar e_bed,
     const scalar mass,
+    const scalar massAsh,
     const scalar np,
     const scalar N,
     scalar& dmass,
@@ -859,6 +916,10 @@ void Foam::BioBed<BedType>::calcCharBurnOut
     // Initialise demand-driven constants
     (void)hRetentionCoeff();
     (void)this->TMax();
+    
+    const scalar bedTMax = this->TMax();
+    
+    scalar Tchar = min(T, bedTMax);
 
     // Update surface reactions
     const scalar hReaction = surfaceReaction().calculate
@@ -867,7 +928,7 @@ void Foam::BioBed<BedType>::calcCharBurnOut
         celli,
         d,
         d2nd,
-        T,
+        Tchar,
         Tc,
         pc,
         rhoc,
@@ -875,20 +936,29 @@ void Foam::BioBed<BedType>::calcCharBurnOut
         Rec,
         e_bed,
         mass,
+        massAsh,
         N,
         dmass,
         dMassSRCarrier
     );
 
     surfaceReaction().addToSurfaceReactionMass(np*dmass);
+    
+    if (T > bedTMax)
+    {
+        dhsTrans += hReaction;
+    }
+    else
+    {
+        const scalar xsi = min(T/this->TMax(), 1.0);
+        const scalar coeff =
+            (1.0 - xsi*xsi)*hRetentionCoeff();
 
-    const scalar xsi = min(T/this->TMax(), 1.0);
-    const scalar coeff =
-        (1.0 - xsi*xsi)*hRetentionCoeff();
+        Sh += coeff*hReaction/dt;
 
-    Sh += coeff*hReaction/dt;
-
-    dhsTrans += (1.0 - coeff)*hReaction;
+        dhsTrans += (1.0 - coeff)*hReaction;
+    }
+    
 }
 
 // ************************************************************************* //

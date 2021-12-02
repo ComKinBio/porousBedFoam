@@ -129,6 +129,13 @@ inline Foam::scalar Foam::BioBed<BedType>::LDevol() const
 
 
 template<class BedType>
+inline Foam::scalar Foam::BioBed<BedType>::wMinMass() const
+{
+    return wMinMass_.value();
+}
+
+
+template<class BedType>
 inline Foam::scalar Foam::BioBed<BedType>::shrinkageFactorAlpha() const
 {
     return shrinkageFactorAlpha_.value();
@@ -232,9 +239,11 @@ inline Foam::tmp<Foam::fvScalarMatrix> Foam::BioBed<BedType>::SYi
         );
 
         volScalarField& sourceField = trhoTrans.ref();
+        
+        dimensionedScalar dtdim(dimTime, dt);
 
         sourceField.primitiveFieldRef() =
-            rhoTrans_[i]/(dt*this->mesh().V());
+            rhoTrans_[i]/(dtdim*this->mesh().V());
 
         const dimensionedScalar Yismall("Yismall", dimless, small);
 
@@ -370,7 +379,10 @@ Foam::BioBed<BedType>::Srho(volScalarField& rho, const scalar dt) const
         {
             sourceField += rhoTrans_[i];
         }
-        sourceField /= dt*this->mesh().V();
+        
+        dimensionedScalar dtdim(dimTime, dt);
+        
+        sourceField /= dtdim*this->mesh().V();
 
         return fvm::SuSp(trhoTrans()/rho, rho);
     }

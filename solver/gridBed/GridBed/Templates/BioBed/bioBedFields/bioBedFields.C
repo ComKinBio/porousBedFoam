@@ -77,6 +77,7 @@ Foam::bioBedFields::bioBedFields
     moisture_(bioProperties_, "moisture"),
     ashContent_(bioProperties_, "ashContent"),
     ashFixedPorosity_(bioProperties_, "ashFixedPorosity"),
+    charYield_(bioProperties_, "charYield"),
     rhopPtrList_(4),
     dp0PtrList_(4),
     T0PtrList_(4),
@@ -240,7 +241,7 @@ Foam::bioBedFields::bioBedFields
                     IOobject::READ_IF_PRESENT,
                     IOobject::AUTO_WRITE
                 ),
-                rhope(e)*particleNumbere(e)*pi/6.0*pow3(dpe(e))
+                dimensionedScalar(dimDensity, rhope(e))*particleNumbere(e)*pi/6.0*pow3(dpe(e))
             )
         );
         
@@ -329,6 +330,7 @@ Foam::bioBedFields::bioBedFields
     
     moisture_.value();
     ashContent_.value();
+    charYield_.value();
     
     // Initialize moisture and ashContent if t=0;
     word wetNp = "particleNumber_wet";
@@ -375,7 +377,26 @@ Foam::bioBedFields::bioBedFields
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-
+void Foam::bioBedFields::updateBedThermo()
+{
+    scalarField& cpWet = bedCpe(wet_);
+    scalarField& cpDry = bedCpe(dry_);
+    scalarField& cpChar = bedCpe(char_);
+    scalarField& cpAsh = bedCpe(ash_);
+    
+    scalarField& T0Wet = bedTe(wet_);
+    scalarField& T0Dry = bedTe(dry_);
+    scalarField& T0Char = bedTe(char_);
+    scalarField& T0Ash = bedTe(ash_);
+    
+    scalarField& w = w_percent();
+    scalarField& gamma = gamma_percent();
+    
+    cpWet = (1-w)*(1500.0 + T0Wet) + w*4200.0;
+    cpDry = (1-gamma)*(1500.0 + T0Dry) + gamma*(420.0 + 2.09*T0Dry + 6.85e-4*sqr(T0Dry));
+    cpChar = 420.0 + 2.09*T0Char + 6.85e-4*sqr(T0Char);
+    cpAsh = 420.0 + 2.09*T0Ash + 6.85e-4*sqr(T0Ash);
+}
 
 
 // ************************************************************************* //
