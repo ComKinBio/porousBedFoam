@@ -123,6 +123,10 @@ Foam::BioBed<BedType>::BioBed
     massExplicit_(true),
     speciesExplicit_(true),
     randomConvesion_(false),
+    gaussianConvesion_
+    (
+        readBool(this->subModelProperties_.lookup("gaussianDistributionConvesion"))
+    ),
     rhoTrans_(thermo.carrier().species().size())
 {
     Istream& isM = this->subModelProperties_.lookup("MassSource");
@@ -201,6 +205,20 @@ Foam::BioBed<BedType>::BioBed
         );
     }
     
+    word moistureGaussianConv = "moistureGaussianConv.csv";
+    
+    wordList wordList(2);
+    wordList[0] = mesh_.time().constant();
+    wordList[1] = moistureGaussianConv;
+    fileName moistureGaussianConvFileName(wordList);
+    
+    if (gaussianConvesion_)
+    {
+        moisturetable_ = interpolationTable<scalar>(moistureGaussianConvFileName);
+        
+        moisturetable_.check();
+    } 
+    
     setModels();
     
     updateBedThermo();
@@ -222,6 +240,11 @@ template<class BedType>
 void Foam::BioBed<BedType>::solveConversion()
 {
     const scalar dt = this->mesh().time().deltaTValue();
+    
+    if (this->radiativeCond() || this->heatConduction())
+    {
+        this->calcHeatConduction();
+    }
     
     solveConversion(dt);
 }
@@ -274,7 +297,7 @@ void Foam::BioBed<BedType>::componentUpdate()
         }
         else
         {
-            dpRef[i] = dp0e(wet_);
+            dpRef[i] = small;
         }
     }
   
@@ -302,7 +325,7 @@ void Foam::BioBed<BedType>::componentUpdate()
         }
         else
         {
-            dp2Ref[i] = dp0e(wet_);
+            dp2Ref[i] = small;
         }
     }
     
@@ -350,7 +373,7 @@ void Foam::BioBed<BedType>::componentUpdate()
         }
         else
         {
-            trhopRef[i] = 0;
+            trhopRef[i] = small;
         }
     }
     
@@ -382,39 +405,7 @@ void Foam::BioBed<BedType>::componentUpdate()
         }
         else
         {
-            tCpRef[i] = this->Cp0();
-        }
-    }
-    
-    //- update particle average kp
-    tmp<volScalarField> tkp
-    (
-        volScalarField::New
-        (
-            this->bedName() + ":tkp",
-            this->mesh(),
-            dimensionedScalar
-            (
-                dimPower/dimLength/dimTemperature, 
-                0
-            )
-        )
-    );
-
-    scalarField& tkpRef = tkp.ref();
-    for (const auto e : bedComponents)
-    {
-        tkpRef += bedKpe(e)*masse(e);
-    }
-    forAll(tkpRef,i)
-    {
-        if (numberRef[i]>0)
-        {
-            tkpRef[i] = tkpRef[i]/tmassRef[i];
-        }
-        else
-        {
-            tkpRef[i] = this->kp0();
+            tCpRef[i] = small;
         }
     }
     
@@ -446,6 +437,51 @@ void Foam::BioBed<BedType>::componentUpdate()
         }
     }
     
+    //- update particle average kp
+    tmp<volScalarField> tkp
+    (
+        volScalarField::New
+        (
+            this->bedName() + ":tkp",
+            this->mesh(),
+            dimensionedScalar
+            (
+                dimPower/dimLength/dimTemperature, 
+                0
+            )
+        )
+    );
+    
+    const scalar sigma = physicoChemical::sigma.value();
+
+    scalarField& tkpRef = tkp.ref();
+    for (const auto e : bedComponents)
+    {
+        tkpRef += bedKpe(e)*masse(e);
+    }
+    forAll(tkpRef,i)
+    {
+        if (numberRef[i]>0)
+        {
+            tkpRef[i] = tkpRef[i]/tmassRef[i];
+            
+            if (this->radiativeCond_ && this->heatConduction_)
+            {
+                tkpRef[i] += 
+                    4*this->alpha_[i]*sigma*this->epsilon0()*dpRef[i]*pow3(tTpRef[i]);
+            }
+            else if (this->radiativeCond_ && !this->heatConduction_)
+            {
+                tkpRef[i] = 
+                    4*this->alpha_[i]*sigma*this->epsilon0()*dpRef[i]*pow3(tTpRef[i]);
+            }
+        }
+        else
+        {
+            tkpRef[i] = small;
+        }
+    }
+    
     
     this->particleNumber() = tparticleNumber;
     this->dp() = tdp;
@@ -458,6 +494,94 @@ void Foam::BioBed<BedType>::componentUpdate()
     tmass.clear();
     
     this->alphaCalc();
+}
+
+
+template<class BedType>
+void Foam::BioBed<BedType>::gaussianConvesionUpdate()
+{
+    // get ref fro the bed fields
+    volScalarField& npWet = particleNumbere(wet_);
+    volScalarField& npDry = particleNumbere(dry_);
+    volScalarField& dWet = dpe(wet_);
+    volScalarField& dDry = dpe(dry_);
+    volScalarField& d2ndWet = dp2nde(wet_);
+    volScalarField& d2ndDry = dp2nde(dry_);
+    volScalarField& T0Wet = bedTe(wet_);
+    volScalarField& T0Dry = bedTe(dry_);
+    volScalarField& mass0Wet = masse(wet_);
+    volScalarField& mass0Dry = masse(dry_);
+    volScalarField& cpWet = bedCpe(wet_);
+    volScalarField& cpDry = bedCpe(dry_);
+    volScalarField& w = w_percent();
+    volScalarField& gamma = gamma_percent();
+    
+    // loop check gaussianConvesion
+    const labelList bedList = this->bedIDList();
+    
+    forAll(bedList, i)
+    {
+        const label celli = bedList[i];
+        const scalar cellScale = cbrt(this->mesh().V()[celli]);
+        const scalar numberThreshold = std::round(sqr(cellScale/dp0e(wet_)));
+        
+        if (npWet[celli] > numberThreshold)
+        {
+            const label celli = bedList[i];
+            const scalar bedV = this->mesh().V()[celli]*this->alpha_[celli];
+            scalar npi0 = bedV/this->volume(dp0e(wet_));
+            npi0 = std::round(npi0);
+            
+            const scalar evaperated = (npi0*moisture() - npWet[celli]*w[celli])/npi0;
+            
+            if (evaperated > 0)
+            {
+                 const scalar dryRatio = moisturetable_(evaperated);
+                 const scalar npWetGaussian = npi0 - std::round(npi0*dryRatio);
+
+                 
+                 if (0 < npWetGaussian < npWet[celli])
+                 {
+                    const scalar npWetToDry = npWet[celli] - npWetGaussian;
+                    const scalar npWetNew = npWet[celli] - npWetToDry;
+                                      
+                    const scalar massWoodInWetNp1 = mass0Wet[celli]*(1-w[celli])/npWet[celli];
+                    const scalar massWaterInWetNp1 = mass0Wet[celli]*w[celli]/npWet[celli];
+                    const scalar transferedWood = massWoodInWetNp1*npWetToDry;
+                    
+                    const scalar newMoisture = mass0Wet[celli]*w[celli]/(mass0Wet[celli] - transferedWood);
+                    const scalar newDryDp = dp0e(wet_)*cbrt(1-shrinkageFactorAlpha());
+                    const scalar newDryDp2nd = newDryDp/sqrt(this->sphericity());
+                     
+                    T0Dry[celli] = (T0Dry[celli]*cpDry[celli]*mass0Dry[celli]
+                                  + T0Wet[celli]*cpWet[celli]*transferedWood)\
+                                  /(cpDry[celli]*mass0Dry[celli] + cpWet[celli]*transferedWood);
+                    
+                    dWet[celli] = dpAfterShrink(dWet[celli], mass0Wet[celli]/npWet[celli], \
+                                  (massWaterInWetNp1*npWetToDry)/(moisture()*npWetNew), shrinkageFactorAlpha());
+                    d2ndWet[celli] = dWet[celli]/sqrt(this->sphericity());
+
+                    dDry[celli] = cbrt((pow3(dDry[celli])*npDry[celli] + pow3(newDryDp)*npWetToDry)\
+                                 /(npDry[celli] + npWetToDry));
+                    d2ndDry[celli] = sqrt((sqr(d2ndDry[celli])*npDry[celli] + sqr(newDryDp2nd)*npWetToDry)\
+                                    /(npDry[celli] + npWetToDry));
+                    
+                    gamma[celli] = mass0Dry[celli]*gamma[celli]\
+                                  /(mass0Dry[celli] + transferedWood);
+                    mass0Dry[celli] += transferedWood;
+                    
+                    w[celli] = newMoisture;
+                    mass0Wet[celli] -= transferedWood;
+                    
+                    npDry[celli] += npWetToDry;
+                    npWet[celli] = npWetNew;
+ 
+                 }
+            }
+        }
+    }
+    
+    componentUpdate();
 }
 
 
@@ -494,12 +618,20 @@ Foam::scalar Foam::BioBed<BedType>::calcHeatTransfer
     const scalar bcp = htc*As/(m*cpbed);
     const scalar acp = bcp*Tc;
     scalar ancp = Sh;
-    if (this->radiation())
+    if (this->radiation() && !this->radiativeCond())
     {
         const scalar sigma = physicoChemical::sigma.value();
 
         ancp += As*epsilon0*(Gc/4.0 - sigma*pow4(T));
     }
+    
+    if (this->cellBackground())
+    {
+        const scalar sigma = physicoChemical::sigma.value();
+
+        ancp += As*epsilon0*(Gc/4.0 - sigma*pow4(T));
+    }
+    
     ancp /= m*cpbed;
 
     // Integrate to find the new parcel temperature

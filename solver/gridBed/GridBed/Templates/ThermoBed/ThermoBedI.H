@@ -168,6 +168,41 @@ inline bool Foam::ThermoBed<BedType>::radiation() const
 
 
 template<class BedType>
+inline bool Foam::ThermoBed<BedType>::radiativeCond() const
+{
+    return radiativeCond_;
+}
+
+
+template<class BedType>
+inline bool Foam::ThermoBed<BedType>::heatConduction() const
+{
+    return heatConduction_;
+}
+
+
+template<class BedType>
+inline bool Foam::ThermoBed<BedType>::cellBackground() const
+{
+    return cellBackground_;
+}
+
+
+template<class BedType>
+inline bool Foam::ThermoBed<BedType>::Johnson() const
+{
+    return Johnson_;
+}
+
+
+template<class BedType>
+inline bool Foam::ThermoBed<BedType>::ZBS() const
+{
+    return ZBS_;
+}
+
+
+template<class BedType>
 inline Foam::DimensionedField<Foam::scalar, Foam::volMesh>&
 Foam::ThermoBed<BedType>::radAreaP()
 {
@@ -325,6 +360,22 @@ Foam::ThermoBed<BedType>::hsCoeff() const
 
 
 template<class BedType>
+inline Foam::DimensionedField<Foam::scalar, Foam::volMesh>&
+Foam::ThermoBed<BedType>::hsCond()
+{
+    return hsCond_();
+}
+
+
+template<class BedType>
+inline const Foam::DimensionedField<Foam::scalar, Foam::volMesh>&
+Foam::ThermoBed<BedType>::hsCond() const
+{
+    return hsCond_();
+}
+
+
+template<class BedType>
 inline Foam::tmp<Foam::fvScalarMatrix> 
 Foam::ThermoBed<BedType>::Sh(volScalarField& hs) const
 {
@@ -387,7 +438,7 @@ Foam::ThermoBed<BedType>::Ep(const scalar dt) const
         )
     );
 
-    if (radiation_)
+    if (radiation_ && !radiativeCond_)
     {
         scalarField& Ep = tEp.ref().primitiveFieldRef();
         const scalarField& V = this->mesh().V();

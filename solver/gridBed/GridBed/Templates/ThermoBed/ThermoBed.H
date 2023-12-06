@@ -157,6 +157,21 @@ protected:
 
             //- Include radiation
             Switch radiation_;
+            
+            //- Include radiative heat conduction in bed
+            Switch radiativeCond_;
+            
+            //- Include heat conduction in bed
+            Switch heatConduction_;
+            
+            //- Include cell back ground radiation
+            Switch cellBackground_;
+            
+            //- Include cell back ground radiation
+            Switch Johnson_;
+            
+            //- whether to use ZBS model
+            Switch ZBS_;
 
             //- Radiation sum of parcel projected areas
             autoPtr<volScalarField::Internal> radAreaP_;
@@ -175,6 +190,9 @@ protected:
 
             //- Coefficient for carrier phase hs equation [W/K]
             autoPtr<volScalarField::Internal> hsCoeff_;
+            
+            //- Sensible enthalpy transfered in the solid phase through conduction [J/kg]
+            autoPtr<volScalarField::Internal> hsCond_;
 
 
     // Protected Member Functions
@@ -298,6 +316,22 @@ public:
                     
             //- Radiation flag
             inline bool radiation() const;
+            
+            //- Radiative heat conduction in bed flag
+            inline bool radiativeCond() const;
+            
+            //- Heat conduction in bed flag
+            inline bool heatConduction() const;
+            
+            //- Heat conduction in bed flag
+            inline bool cellBackground() const;
+            
+            //- Heat Johnson model, to active ZBS should be active 
+            //- but if active ZBS is disabled 
+            inline bool Johnson() const;
+            
+            //- ZBS model flag
+            inline bool ZBS() const;
 
             //- Radiation sum of parcel projected areas [m^2]
             inline const volScalarField::Internal&
@@ -355,6 +389,13 @@ public:
                 //- Return const coefficient for carrier phase hs equation
                 inline const volScalarField::Internal&
                     hsCoeff() const;
+                    
+                //- Return conduction hs
+                inline volScalarField::Internal& hsCond();
+
+                //- Return const conduction hs
+                inline const volScalarField::Internal&
+                    hsCond() const;
 
                 //- Return sensible enthalpy source term [J/kg/m^3/s]
                 inline tmp<fvScalarMatrix> Sh(volScalarField& hs, const scalar dt) const;
@@ -417,8 +458,12 @@ public:
                 scalar& Pr,
                 scalar& kappas
             );
+                        
+             //- solve heat transfer through conduction in bed 
+            void calcHeatConduction();
             
-            //- solve heat transfer for the bed
+            //- solve heat transfer for the bed 
+            //TODO add conduction heat source to this template
             void solveHeat(const scalar dt);
             
 };

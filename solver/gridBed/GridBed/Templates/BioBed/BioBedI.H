@@ -115,6 +115,13 @@ inline bool Foam::BioBed<BedType>::randomConvesion() const
 
 
 template<class BedType>
+inline bool Foam::BioBed<BedType>::gaussianConvesion() const
+{
+    return gaussianConvesion_;
+}
+
+
+template<class BedType>
 inline Foam::scalar Foam::BioBed<BedType>::TDevol() const
 {
     return TDevol_.value();

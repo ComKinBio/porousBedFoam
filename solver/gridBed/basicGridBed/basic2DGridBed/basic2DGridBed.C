@@ -393,7 +393,7 @@ void Foam::basic2DGridBed::solve(const scalar dt)
     {
         const label celli = bedIDList_[i];
         const scalar npi = particleNumber_[celli];
-        const scalar massi = mass(celli);
+        const scalar massi = mass(celli)/npi;
         vector Udp = Zero;
         
         // Reynolds number and gas phase
@@ -401,7 +401,8 @@ void Foam::basic2DGridBed::solve(const scalar dt)
         const scalar muc = mu_[celli];
         const vector Uc = U_[celli];
 
-        
+        const scalar sqrdp2ndi = sqr(dp2nd_[celli]);
+        const scalar rhopi = rhop_[celli];
         // Sources
         //~~~~~~~~
 
@@ -411,7 +412,7 @@ void Foam::basic2DGridBed::solve(const scalar dt)
         // Momentum transfer from the particle to the carrier phase
         vector dUTrans = Zero;
         
-        const forceSuSp Fcp = forces().calcCoupled(dt, massi, Rei, muc);
+        const forceSuSp Fcp = forces().calcCoupled(dt, massi/(sqrdp2ndi*rhopi), Rei, muc);
         
         const vector acp = (Fcp.Sp()*Uc + Fcp.Su())/massi;
         const scalar bcp = Fcp.Sp()/massi;

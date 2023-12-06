@@ -46,6 +46,7 @@ SourceFiles
 #include "demandDrivenEntry.H"
 #include "SLGThermo.H"
 #include "bioBedFields.H"
+#include "interpolationTable.H"
 
 // #include "ParticleForceList.H" // TODO
 
@@ -151,6 +152,11 @@ protected:
             
             //- Double random conversion
             bool randomConvesion_;
+            
+            //- Double random conversion
+            const bool gaussianConvesion_;
+            
+            mutable interpolationTable<scalar> moisturetable_;
                        
 
         // Sources
@@ -276,6 +282,9 @@ public:
             
             //- Double random conversion
             inline bool randomConvesion() const;
+            
+            //- Gaussian conversion
+            inline bool gaussianConvesion() const;
             
             
         // Sources
@@ -435,9 +444,8 @@ public:
             //- According to the components
             void componentUpdate();
                 
-            //- solve heat transfer and thermo conversion
-//             void solveThermoConversion(const scalar dt);
-            
+            //- Update particle type according to gaussian convesion model
+            void gaussianConvesionUpdate();
             
             //- Reload bed functions for one bio component
                 

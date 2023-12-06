@@ -43,7 +43,8 @@ inline Foam::GravityBed<BedType>::GravityBed
     collapseSetting_(this->bedProperties_.subDict("collapseSetting")),
     alphaGCollapse_(collapseSetting_.lookupOrDefault<scalar>("collapseThreshold", 0.5)),
     alphaGCollapseMin_(collapseSetting_.lookupOrDefault<scalar>("collapseTo", 0.4)),
-    alphaGCollapseTol_(collapseSetting_.lookupOrDefault<scalar>("collapseTolerance", 0.02))
+    alphaGCollapseTol_(collapseSetting_.lookupOrDefault<scalar>("collapseTolerance", 0.02)),
+    skipCollapse_(false)
 {}
 
 

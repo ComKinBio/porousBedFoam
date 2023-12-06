@@ -107,8 +107,11 @@ int main(int argc, char *argv[])
             << "  ClockTime = " << runTime.elapsedClockTime() << " s"
             << nl << endl;
             
-        
-        if (runTime.timeIndex() % collapseSolverFreq == 0)
+        if (collapseSolverFreq < 0)
+        {
+            Info<< "No collaps" << endl;
+        }
+        else if (runTime.timeIndex() % collapseSolverFreq == 0)
         {
             bioBed.gravityCollapse();
         }

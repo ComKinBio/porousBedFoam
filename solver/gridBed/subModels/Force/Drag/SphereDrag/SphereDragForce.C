@@ -84,7 +84,21 @@ Foam::forceSuSp Foam::SphereDragForce<BedType>::calcCoupled
 ) const
 {
 //     return forceSuSp(Zero, mass*0.75*muc*CdRe(Re)/(p.rho()*sqr(p.d())));
-    return forceSuSp(Zero, mass*0.75*muc*CdRe(Re));
+//     return forceSuSp(Zero, mass*0.75*muc*CdRe(Re));
+    
+    //temperory approach Ergun drag, const voidage 0.5
+    // here mass should be mass/(p.rho()*sqr(p.d()))
+    
+    const scalar alphac = 0.5;
+    
+    return forceSuSp
+    (
+        Zero,
+        mass*(150*(1 - alphac)/alphac + 1.75*Re)
+        *muc/*/(/*alphac*//*sqr(p.d()))/p.rho()*/
+    );
+            
+    
 }
 
 

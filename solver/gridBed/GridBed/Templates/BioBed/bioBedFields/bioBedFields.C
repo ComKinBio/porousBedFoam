@@ -392,10 +392,18 @@ void Foam::bioBedFields::updateBedThermo()
     scalarField& w = w_percent();
     scalarField& gamma = gamma_percent();
     
-    cpWet = (1-w)*(1500.0 + T0Wet) + w*4200.0;
-    cpDry = (1-gamma)*(1500.0 + T0Dry) + gamma*(420.0 + 2.09*T0Dry + 6.85e-4*sqr(T0Dry));
-    cpChar = 420.0 + 2.09*T0Char + 6.85e-4*sqr(T0Char);
-    cpAsh = 420.0 + 2.09*T0Ash + 6.85e-4*sqr(T0Ash);
+//     cpWet = (1-w)*(1500.0 + T0Wet) + w*4200.0;
+//     cpDry = (1-gamma)*(1500.0 + T0Dry) + gamma*(420.0 + 2.09*T0Dry + 6.85e-4*sqr(T0Dry));
+//     cpChar = 420.0 + 2.09*T0Char + 6.85e-4*sqr(T0Char);
+//     cpAsh = 420.0 + 2.09*T0Ash + 6.85e-4*sqr(T0Ash);
+    
+    cpWet = (1-w)*(4.206*T0Wet - 37.7) + w*4200.0 + \
+        1.0e3*((0.02355*T0Wet - 1.320*w/(1.0 - w) - 6.191)*w/(1.0 - w));
+    cpDry = (1-gamma)*(4.206*T0Dry - 37.7) + gamma*(-334.0 + 4410.0e-3*T0Dry - \
+        3160.0e-6*Foam::sqr(T0Dry) + 1010.0e-9*Foam::pow3(T0Dry) - 119.0e-12*Foam::pow(T0Dry,4.0));
+    cpChar = -334.0 + 4410.0e-3*T0Char - 3160.0e-6*Foam::sqr(T0Char) + \
+        1010.0e-9*Foam::pow3(T0Char) - 119.0e-12*Foam::pow(T0Char,4.0);
+    cpAsh = 754.0 + 0.586*(T0Ash-273.15);
 }
 
 

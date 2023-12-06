@@ -108,8 +108,12 @@ protected:
         );
         
         //- column and collapse just for once for everycell
-        void collapseOneColumn(const labelList list);
-        
+        bool collapseOneColumn(const labelList list);
+
+private:
+    
+    // Skip collapse, if method unapplicable
+    bool skipCollapse_;
        
 
 public:

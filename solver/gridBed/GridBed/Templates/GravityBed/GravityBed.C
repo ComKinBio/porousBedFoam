@@ -66,7 +66,7 @@ Foam::GravityBed<BedType>::collapseNumber
     {
         number = this->particleNumber_[cellj];
     }
-    
+
     scalar newAlphaCelli = 1- (this->volume(celli) + number*celljVp)/this->bedGridVolume_[celli];
     
     if (newAlphaCelli < (alphaGCollapseMin_ + alphaGCollapseTol_))
@@ -79,9 +79,11 @@ Foam::GravityBed<BedType>::collapseNumber
 
 
 template<class BedType>
-void Foam::GravityBed<BedType>::collapseOneColumn(const labelList list)
+bool Foam::GravityBed<BedType>::collapseOneColumn(const labelList list)
 {
     label listSize = list.size();
+    
+    bool noCollapse = true;
 
     for(label i = 0; i<listSize-1; i++)
     {
@@ -93,11 +95,17 @@ void Foam::GravityBed<BedType>::collapseOneColumn(const labelList list)
         {
             
             scalar number = collapseNumber(celli, cellj);
-
-            this->updateBedfieldsPrompt(cellj, celli, number);
             
+            if (number > 0)
+            {
+                this->updateBedfieldsPrompt(cellj, celli, number);
+                
+                noCollapse = false;
+            }
         }
     }
+    
+    return !noCollapse;
 }
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
@@ -133,15 +141,27 @@ void Foam::GravityBed<BedType>::collapseOneColumn(const labelList list)
 template<class BedType>
 void Foam::GravityBed<BedType>::gravityCollapse()
 {
-    while (chechCollapse())
+    skipCollapse_ = false;
+    
+    while (chechCollapse() && !skipCollapse_)
     {
         const labelListList bedGridColumn = this->bedGridColumn();
+        
+        bool nocollapse = true;
 
         forAll(bedGridColumn, c)
         {
             const labelList columnList = bedGridColumn[c];
             
-            collapseOneColumn(columnList);
+            if (collapseOneColumn(columnList))
+            {
+                nocollapse = false;
+            }
+        }
+        
+        if (nocollapse)
+        {
+            skipCollapse_ = true;
         }
         
         this->updateBedList();

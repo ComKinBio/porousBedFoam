@@ -25,6 +25,9 @@ License
 
 #include "ThermoBed.H"
 #include "meshTools.H"
+#include "fvmLaplacian.H"
+#include "fvmDdt.H"
+#include "constants.H"
 
 #include "HeatTransferModel.H"
 
@@ -43,6 +46,16 @@ void Foam::ThermoBed<BedType>::setModels()
     );
    
     this->subModelProperties().lookup("radiation") >> radiation_;
+    
+    this->subModelProperties().lookup("radiativeConduction") >> radiativeCond_;
+    
+    this->subModelProperties().lookup("heatConduction") >> heatConduction_;
+    
+    this->subModelProperties().lookup("cellBackground") >> cellBackground_;
+    
+    this->subModelProperties().lookup("Johnson") >> Johnson_;
+    
+    this->subModelProperties().lookup("ZBSModel") >> ZBS_;
 
     if (radiation_)
     {
@@ -178,6 +191,11 @@ inline Foam::ThermoBed<BedType>::ThermoBed
     TIntegrator_(nullptr),
     heatExplicit_(true),
     radiation_(false),
+    radiativeCond_(false),
+    heatConduction_(false),
+    cellBackground_(false),
+    Johnson_(false),
+    ZBS_(false),
     radAreaP_(nullptr),
     radT4_(nullptr),
     radAreaPT4_(nullptr),
@@ -211,6 +229,22 @@ inline Foam::ThermoBed<BedType>::ThermoBed
             ),
             this->mesh(),
             dimensionedScalar(dimEnergy/dimTemperature, 0)
+        )
+    ),
+    hsCond_
+    (
+        new volScalarField::Internal
+        (
+            IOobject
+            (
+                bedName + ":hsCond",
+                this->mesh().time().timeName(),
+                this->mesh(),
+                IOobject::READ_IF_PRESENT,
+                IOobject::AUTO_WRITE
+            ),
+            this->mesh(),
+            dimensionedScalar(dimEnergy/dimTime, 0)
         )
     )
 {
@@ -340,7 +374,14 @@ Foam::scalar Foam::ThermoBed<BedType>::calcHeatTransfer
     const scalar bcp = htc*As/(m*cpbed);
     const scalar acp = bcp*Tc()[celli];
     scalar ancp = Sh;
-    if (radiation())
+    if (radiation() && !radiativeCond())
+    {
+        const scalar sigma = physicoChemical::sigma.value();
+
+        ancp += As*epsilon0()*(Gc/4.0 - sigma*pow4(T));
+    }
+    
+    if (cellBackground())
     {
         const scalar sigma = physicoChemical::sigma.value();
 
@@ -362,6 +403,268 @@ Foam::scalar Foam::ThermoBed<BedType>::calcHeatTransfer
     Sph = dt*m*cpbed*bcp;
 
     return Tnew;
+}
+
+
+template<class BedType>
+void Foam::ThermoBed<BedType>::calcHeatConduction()
+{
+    const  scalar dt = this->mesh().time().deltaTValue();
+   
+    const volScalarField rhocp(this->rhop_*this->bedCp_);
+    const volScalarField lambda(this->bedKp_);
+    
+    volScalarField Ts("TsNew", this->bedT_);
+    volScalarField alphac("alphac", this->alpha_);    
+    alphac = 1.0 - alphac;  
+    
+    volScalarField TT
+    (
+        IOobject
+        (
+            "TT",
+            this->mesh().time().timeName(),
+            this->mesh(),
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        this->mesh(),
+        dimensionedScalar(dimTemperature, 0),
+        zeroGradientFvPatchScalarField::typeName
+    );
+
+    scalarField& TTInterFeildRef = TT.ref();
+    scalarField& TsInterFeildRef = Ts.ref();
+    
+    TTInterFeildRef = TsInterFeildRef;
+ 
+    if (ZBS())
+    {
+        //calculate bed properties
+        volScalarField solidfraction
+        (
+            IOobject
+            (
+                "solidfraction",
+                this->mesh().time().timeName(),
+                this->mesh()
+            ),
+            this->mesh(),
+            dimensionedScalar(dimensionSet(0, 0, 0, 0, 0, 0, 0), 0.0),
+            zeroGradientFvPatchScalarField::typeName
+        );
+
+        
+        volScalarField ks
+        (
+            IOobject
+            (
+                "ks",
+                this->mesh().time().timeName(),
+                this->mesh()
+            ),
+            this->mesh(),
+            dimensionedScalar(dimensionSet(1, 1, -3, -1, 0, 0, 0), 1e-8),
+            zeroGradientFvPatchScalarField::typeName
+        );
+
+        //calculate fluid heat conductivity
+        volScalarField kf
+        (
+            IOobject
+            (
+                "kf",
+                this->mesh().time().timeName(),
+                this->mesh()
+            ),
+            this->mesh(),
+            dimensionedScalar(dimensionSet(1, 1, -3, -1, 0, 0, 0), 2.5143e-3),
+            zeroGradientFvPatchScalarField::typeName
+        );
+        
+        volScalarField dp
+        (
+            IOobject
+            (
+                "dpCond",
+                this->mesh().time().timeName(),
+                this->mesh()
+            ),
+            this->dp_,
+            zeroGradientFvPatchScalarField::typeName
+        );
+        
+        forAll(solidfraction, i)
+        {
+            solidfraction[i] = alphac[i];
+            if (solidfraction[i] < small)
+            {
+                solidfraction[i] = 1e-6;
+            }
+            
+            if (dp[i] < small)
+            {
+                dp[i] = 0.001;
+            }
+            
+            kf[i] = 2.5143e-3 + 7.7288e-5*Tc()[i] + 8.6248e-11*Foam::pow(Tc()[i], 2);
+            ks[i] = max(lambda[i], 5.0286e-3); //two times kf
+        }
+        
+        kf.correctBoundaryConditions();
+        ks.correctBoundaryConditions();
+        solidfraction.correctBoundaryConditions();
+        dp.correctBoundaryConditions();
+
+       //calculate bed effective conductivity  
+        dimensionedScalar ems
+        (
+            "ems",
+            dimensionSet(0, 0, 0, 0, 0, 0 ,0),
+            0.85
+        );
+        
+        dimensionedScalar Kphi
+        (
+            "Kphi",
+            dimensionSet(0, 0, 0, 0, 0, 0 ,0),
+            0.01
+        );
+        
+        volScalarField Ts3
+        (
+            IOobject
+            (
+                "Ts3",
+                this->mesh().time().timeName(),
+                this->mesh()
+            ),
+            Foam::pow(TT, 3),
+            zeroGradientFvPatchScalarField::typeName
+        );
+        Ts3.correctBoundaryConditions();
+        
+        volScalarField k_eff_g = kf*(1. - Foam::sqrt(solidfraction));
+       
+        volScalarField kfs = kf/ks;
+
+        volScalarField B = 1.25*Foam::pow((solidfraction/(1-solidfraction)), 10./9.);
+        volScalarField B0 = 1.-kfs*B;
+        volScalarField B1 = (1.-kfs)*B/Foam::sqr(B0)*Foam::log(1.0/kfs/B);
+        volScalarField B2 = -(B+1.)/2;
+        volScalarField B3 = -(B-1.)/B0;
+//         volScalarField k_eff_c = kf*Foam::sqrt(solidfraction)*(2./B0)*(B1 + B2 + B3);
+        
+        volScalarField k_eff_c = kf*Foam::sqrt(solidfraction)*(2./B0)*(B1 + B2 + B3)*(1. - Kphi) + ks*Foam::sqrt(solidfraction)*Kphi;
+               
+        volScalarField k_eff_r_coeff = 4.*physicoChemical::sigma*this->dp_;
+
+        volScalarField BBFE1 = (1. - Foam::sqrt(solidfraction))*(1. - solidfraction);
+        volScalarField Lamda = ks/(4.*dp*physicoChemical::sigma*Ts3);
+        volScalarField BBFE = BBFE1 + Foam::sqrt(solidfraction)/(2./ems - 1.)*(B + 1.)/B/(1. + 1/((2./ems - 1)*Lamda));
+        volScalarField k_eff_r_coeffForT3 = BBFE*k_eff_r_coeff;
+        
+        if (Johnson())
+        {
+            scalar emm = ems.value();
+            volScalarField FE =   5.08 - 24.63*solidfraction + 2.097*emm + 43.54*Foam::pow(solidfraction, 2) - 5.937*solidfraction*emm 
+                        + 0.7391* Foam::pow(emm, 2) - 26.9*Foam::pow(solidfraction, 3) 
+                        + 5.455*Foam::pow(solidfraction, 2)*emm - 0.6188*solidfraction*Foam::pow(emm, 2);
+            
+            k_eff_r_coeffForT3 = k_eff_r_coeff*FE;
+        }
+        
+        volScalarField k_eff_r = k_eff_r_coeffForT3*Ts3;
+        
+        volScalarField ks_eff
+        (
+            IOobject
+            (
+                "ks_eff",
+                this->mesh().time().timeName(),
+                this->mesh()
+            ),
+            this->mesh(),
+            dimensionedScalar(dimensionSet(1, 1, -3, -1, 0, 0, 0), 2.5143e-3),
+            zeroGradientFvPatchScalarField::typeName
+        );
+        
+        ks_eff = k_eff_g + k_eff_c + k_eff_r;
+        ks_eff.correctBoundaryConditions();
+        
+        const scalar rhocpMax = max(rhocp).value();
+        
+        volScalarField rhocpM
+        (
+            IOobject
+            (
+                "rhocpM",
+                this->mesh().time().timeName(),
+                this->mesh()
+            ),
+            rhocp,
+            zeroGradientFvPatchScalarField::typeName
+        );
+        
+        forAll(rhocpM,i)
+        {
+            if (rhocpM[i] < small)
+            {
+                rhocpM[i] = rhocpMax;
+            }
+        }
+        
+        rhocpM.correctBoundaryConditions();
+        
+        
+        volScalarField DTs = ks_eff/rhocpM;
+        
+        solve
+        (
+            fvm::ddt(solidfraction, TT) 
+        -
+            fvm::laplacian
+            (
+                DTs, 
+                TT
+            )
+        );
+
+        
+    }
+    else
+    {
+        solve
+        (
+            fvm::ddt(alphac, rhocp, TT) 
+        -
+            fvm::laplacian
+            (
+                fvc::interpolate(alphac)
+            *fvc::interpolate(lambda), 
+                TT
+            )
+        );
+    }
+    
+    TsInterFeildRef = TTInterFeildRef;
+
+    tmp<volScalarField::Internal> thsCond
+    (
+        volScalarField::Internal::New
+        (
+            this->bedName() + ":thsCond",
+            this->mesh(),
+            dimensionedScalar(dimEnergy/dimTime, 0)
+        )
+    );
+
+    scalarField& thsCondRef = thsCond.ref();
+    
+    thsCondRef = rhocp*(Ts - this->bedT_)*this->mesh().V()*(1.0-this->alpha())/dt;   
+   
+    hsCond_() = thsCond;
+
 }
 
 
