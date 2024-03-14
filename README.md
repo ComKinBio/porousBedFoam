@@ -20,7 +20,8 @@
 
 
 <!-- PROJECT LOGO -->
-The porousBedFoam is an extended solver based on the official "[DPMFoam](https://github.com/OpenFOAM/OpenFOAM-7/tree/master/applications/solvers/lagrangian/DPMFoam)" solver with thermal particles. 
+The porousBedFoam is a complete new solver, which has the structure and design inspired by the [lagrangian
+/intermediate](https://github.com/OpenFOAM/OpenFOAM-7/tree/master/src/lagrangian/intermediate). 
 <br />
 <br />
 
@@ -103,9 +104,9 @@ Distributed under the [GPLv3 License](https://www.gnu.org/licenses/gpl-3.0.en.ht
 <!-- CONTACT -->
 ## Contact
 
-Corinna Schulze-Netzer - corinna.netzer@ntnu.no
+Jingyuan Zhang - jingyuan.zhang@ntnu.no
 
-Jingyuan Zhang - jingyuan.zhang@ntnu.no 
+Corinna Schulze-Netzer - corinna.netzer@ntnu.no
 
 Tian Li - tian.li@ntnu.no / tian.li@risefr.no
 
